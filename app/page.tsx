@@ -6,9 +6,11 @@ import { getDb, type Todo } from "./db";
 async function TodoList() {
   await connection();
 
-  const todos = getDb()
-    .prepare("SELECT id, title, completed FROM todos ORDER BY id DESC")
-    .all() as Todo[];
+  const result = await getDb().query<Todo>(
+    "SELECT id, title, completed FROM todos ORDER BY id DESC",
+  );
+
+  const todos = result.rows;
 
   return (
     <ul>

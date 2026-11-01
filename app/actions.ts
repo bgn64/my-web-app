@@ -26,19 +26,21 @@ export async function addTodo(formData: FormData) {
     throw new Error("A todo title is required.");
   }
 
-  getDb()
-    .prepare("INSERT INTO todos (title) VALUES (?)")
-    .run(value.trim());
+  await getDb().query(
+    "INSERT INTO todos (title) VALUES ($1)",
+    [value.trim()],
+  );
 
   revalidatePath("/");
 }
 
 export async function toggleTodo(formData: FormData) {
-  const result = getDb()
-    .prepare("UPDATE todos SET completed = 1 - completed WHERE id = ?")
-    .run(getId(formData));
+  const result = await getDb().query(
+    "UPDATE todos SET completed = 1 - completed WHERE id = $1",
+    [getId(formData)],
+  );
 
-  if (result.changes !== 1) {
+  if (result.rowCount !== 1) {
     throw new Error("Todo not found.");
   }
 
@@ -46,11 +48,12 @@ export async function toggleTodo(formData: FormData) {
 }
 
 export async function deleteTodo(formData: FormData) {
-  const result = getDb()
-    .prepare("DELETE FROM todos WHERE id = ?")
-    .run(getId(formData));
+  const result = await getDb().query(
+    "DELETE FROM todos WHERE id = $1",
+    [getId(formData)],
+  );
 
-  if (result.changes !== 1) {
+  if (result.rowCount !== 1) {
     throw new Error("Todo not found.");
   }
 

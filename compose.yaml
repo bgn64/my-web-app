@@ -3,8 +3,30 @@ services:
     build: .
     ports:
       - "3000:3000"
+    restart: unless-stopped
+    environment:
+      PGHOST: db
+      PGPORT: "5432"
+      PGDATABASE: todos
+      PGUSER: todos
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    depends_on:
+      db:
+        condition: service_healthy
+  db:
+    image: postgres:17-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: todos
+      POSTGRES_USER: todos
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     volumes:
-      - todo-data:/app/data
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U todos -d todos"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 volumes:
-  todo-data:
+  postgres-data:

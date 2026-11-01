@@ -1,27 +1,33 @@
-import Database from "better-sqlite3";
-import { mkdirSync } from "node:fs";
-import { join } from "node:path";
+import "server-only";
+import { Pool } from "pg";
 
-let database: Database.Database | undefined;
+const globalForDb = globalThis as typeof globalThis & {
+  postgresPool?: Pool;
+};
 
 export function getDb() {
-  if (!database) {
-    const directory = join(process.cwd(), "data");
-    mkdirSync(directory, { recursive: true });
+  if (!globalForDb.postgresPool) {
+    for (const name of [
+      "PGHOST",
+      "PGDATABASE",
+      "PGUSER",
+      "PGPASSWORD",
+    ]) {
+      if (!process.env[name]) {
+        throw new Error(`Missing database environment variable: ${name}`);
+      }
+    }
 
-    database = new Database(join(directory, "todos.sqlite"));
+    const pool = new Pool();
 
-    database.exec(`
-      CREATE TABLE IF NOT EXISTS todos (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT NOT NULL,
-        completed INTEGER NOT NULL DEFAULT 0
-          CHECK (completed IN (0, 1))
-      )
-    `);
+    pool.on("error", (error) => {
+      console.error("Unexpected PostgreSQL pool error:", error);
+    });
+
+    globalForDb.postgresPool = pool;
   }
 
-  return database;
+  return globalForDb.postgresPool;
 }
 
 export type Todo = {
