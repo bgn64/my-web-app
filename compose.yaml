@@ -3,3 +3,8 @@ services:
     build: .
     ports:
       - "3000:3000"
+    volumes:
+      - todo-data:/app/data
+
+volumes:
+  todo-data:
