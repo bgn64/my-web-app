@@ -2,6 +2,9 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { addTodo, deleteTodo, toggleTodo } from "./actions";
 import { getDb, type Todo } from "./db";
+import { headers } from "next/headers";
+import { auth } from "./auth";
+import { AuthForm, LogoutButton } from "./auth-controls";
 
 async function TodoList() {
   await connection();
@@ -35,10 +38,25 @@ async function TodoList() {
   );
 }
 
-export default function Home() {
+async function SharedTodos() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) {
+    return (
+      <main>
+        <h1>Todos</h1>
+        <AuthForm />
+      </main>
+    );
+  }
+
   return (
     <main>
       <h1>Todos</h1>
+      <p>Signed in as {session.user.email}</p>
+      <LogoutButton />
 
       <form action={addTodo}>
         <input name="title" aria-label="New todo" required />
@@ -49,5 +67,13 @@ export default function Home() {
         <TodoList />
       </Suspense>
     </main>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<p>Loading...</p>}>
+      <SharedTodos />
+    </Suspense>
   );
 }

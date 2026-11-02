@@ -2,6 +2,20 @@
 
 import { revalidatePath } from "next/cache";
 import { getDb } from "./db";
+import { headers } from "next/headers";
+import { auth } from "./auth";
+
+async function requireSession() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) {
+    throw new Error("You must be logged in.");
+  }
+
+  return session;
+}
 
 function getId(formData: FormData) {
   const value = formData.get("id");
@@ -20,6 +34,8 @@ function getId(formData: FormData) {
 }
 
 export async function addTodo(formData: FormData) {
+  await requireSession();
+
   const value = formData.get("title");
 
   if (typeof value !== "string" || !value.trim()) {
@@ -35,6 +51,8 @@ export async function addTodo(formData: FormData) {
 }
 
 export async function toggleTodo(formData: FormData) {
+  await requireSession();
+
   const result = await getDb().query(
     "UPDATE todos SET completed = 1 - completed WHERE id = $1",
     [getId(formData)],
@@ -48,6 +66,8 @@ export async function toggleTodo(formData: FormData) {
 }
 
 export async function deleteTodo(formData: FormData) {
+  await requireSession();
+  
   const result = await getDb().query(
     "DELETE FROM todos WHERE id = $1",
     [getId(formData)],
