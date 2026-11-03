@@ -6,11 +6,14 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:migrate": "node-pg-migrate up --config-file migrations.config.cjs",
+    "db:migrate:create": "node-pg-migrate create --migration-file-language sql"
   },
   "dependencies": {
     "better-auth": "^1.7.15",
     "next": "16.4.3",
+    "node-pg-migrate": "^9.0.0",
     "pg": "^8.23.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",
