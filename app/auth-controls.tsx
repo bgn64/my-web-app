@@ -99,39 +99,3 @@ export function AuthForm() {
     </section>
   );
 }
-
-export function LogoutButton() {
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState("");
-
-  async function logout() {
-    setPending(true);
-    setError("");
-
-    try {
-      const result = await authClient.signOut();
-
-      if (result.error) {
-        setError(result.error.message ?? "Logout failed.");
-        return;
-      }
-
-      window.location.assign("/");
-    } catch (error) {
-      setError(
-        error instanceof Error ? error.message : "Unable to contact the server.",
-      );
-    } finally {
-      setPending(false);
-    }
-  }
-
-  return (
-    <div>
-      <button type="button" onClick={logout} disabled={pending}>
-        {pending ? "Logging out..." : "Log out"}
-      </button>
-      {error && <p role="alert">{error}</p>}
-    </div>
-  );
-}

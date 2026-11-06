@@ -29,9 +29,3 @@ export function getDb() {
 
   return globalForDb.postgresPool;
 }
-
-export type Todo = {
-  id: number;
-  title: string;
-  completed: number;
-};

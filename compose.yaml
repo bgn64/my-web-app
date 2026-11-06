@@ -12,11 +12,26 @@ services:
       PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:?Set BETTER_AUTH_URL}
+      POWERSYNC_DEV_JWK: ${POWERSYNC_DEV_JWK:?Set POWERSYNC_DEV_JWK}
+      POWERSYNC_PUBLIC_URL: ${POWERSYNC_PUBLIC_URL:?Set POWERSYNC_PUBLIC_URL}
+    networks:
+      - app
+      - app-backend
     depends_on:
       db:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
   migrate:
     build: .
     command: ["npm", "run", "db:migrate"]
@@ -26,11 +41,14 @@ services:
       PGDATABASE: todos
       PGUSER: todos
       PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    networks:
+      - app-backend
     depends_on:
       db:
         condition: service_healthy
   db:
     image: postgres:17-bookworm
+    command: ["postgres", "-c", "wal_level=logical"]
     restart: unless-stopped
     environment:
       POSTGRES_DB: todos
@@ -38,11 +56,130 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     volumes:
       - postgres-data:/var/lib/postgresql/data
+    networks:
+      - app-backend
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U todos -d todos"]
       interval: 5s
       timeout: 5s
       retries: 10
 
+  powersync-provision:
+    image: postgres:17-bookworm
+    environment:
+      PGHOST: db
+      PGPORT: "5432"
+      PGDATABASE: todos
+      PGUSER: todos
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+      PS_REPLICATION_PASSWORD: ${POWERSYNC_REPLICATION_PASSWORD:?Set POWERSYNC_REPLICATION_PASSWORD}
+    volumes:
+      - ./powersync/provision.sql:/config/provision.sql:ro
+    command:
+      - psql
+      - --no-psqlrc
+      - --set=ON_ERROR_STOP=1
+      - --file=/config/provision.sql
+    networks:
+      - app-backend
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  mongo:
+    image: mongo:7.0
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    restart: unless-stopped
+    volumes:
+      - powersync-mongo-data:/data/db
+    networks:
+      - powersync-storage
+    healthcheck:
+      test:
+        - CMD
+        - mongosh
+        - --quiet
+        - --eval
+        - "quit(db.adminCommand({ ping: 1 }).ok ? 0 : 1)"
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  mongo-init:
+    image: mongo:7.0
+    networks:
+      - powersync-storage
+    depends_on:
+      mongo:
+        condition: service_healthy
+    entrypoint: ["mongosh"]
+    command:
+      - --host
+      - mongo:27017
+      - --quiet
+      - --eval
+      - |
+        if (db.getSiblingDB("local").system.replset.countDocuments({}) === 0) {
+          const result = rs.initiate({
+            _id: "rs0",
+            members: [{ _id: 0, host: "mongo:27017" }]
+          });
+          if (result.ok !== 1) {
+            throw new Error(JSON.stringify(result));
+          }
+        }
+        let ready = false;
+        for (let attempt = 0; attempt < 60; attempt++) {
+          if (db.adminCommand({ hello: 1 }).isWritablePrimary) {
+            ready = true;
+            break;
+          }
+          sleep(1000);
+        }
+        if (!ready) {
+          throw new Error("MongoDB did not elect a primary within 60 seconds");
+        }
+
+  powersync:
+    image: journeyapps/powersync-service:1.27.2
+    restart: unless-stopped
+    command: ["start", "-r", "unified"]
+    environment:
+      POWERSYNC_CONFIG_PATH: /config/service.yaml
+      PS_REPLICATION_PASSWORD: ${POWERSYNC_REPLICATION_PASSWORD:?Set POWERSYNC_REPLICATION_PASSWORD}
+      PS_DEV_JWK: ${POWERSYNC_DEV_JWK:?Set POWERSYNC_DEV_JWK}
+    volumes:
+      - ./powersync/service.yaml:/config/service.yaml:ro
+      - ./powersync/sync-config.yaml:/config/sync-config.yaml:ro
+    ports:
+      - "8080:8080"
+    networks:
+      - app
+      - app-backend
+      - powersync-storage
+    depends_on:
+      powersync-provision:
+        condition: service_completed_successfully
+      mongo-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://localhost:8080/probes/liveness').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
 volumes:
   postgres-data:
+  powersync-mongo-data:
+
+networks:
+  app:
+  app-backend:
+    internal: true
+  powersync-storage:
+    internal: true

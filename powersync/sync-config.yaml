@@ -1,0 +1,8 @@
+config:
+  edition: 3
+  storage_version: 4
+
+streams:
+  shared_todos:
+    auto_subscribe: true
+    query: SELECT id::text AS id, title, completed FROM todos

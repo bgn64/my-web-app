@@ -1,0 +1,30 @@
+replication:
+  connections:
+    - type: postgresql
+      hostname: db
+      port: 5432
+      database: todos
+      username: powersync
+      password: !env PS_REPLICATION_PASSWORD
+      sslmode: disable
+
+storage:
+  type: mongodb
+  uri: mongodb://mongo:27017/powersync?replicaSet=rs0
+
+port: 8080
+
+sync_config:
+  path: /config/sync-config.yaml
+
+client_auth:
+  audience: ["powersync-local"]
+  jwks:
+    keys:
+      - kty: oct
+        alg: HS256
+        kid: local-dev
+        k: !env PS_DEV_JWK
+
+telemetry:
+  disable_telemetry_sharing: true
