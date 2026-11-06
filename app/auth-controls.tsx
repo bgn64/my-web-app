@@ -40,24 +40,31 @@ export function AuthForm() {
   }
 
   return (
-    <section>
-      <h2>{signup ? "Create an account" : "Log in"}</h2>
+    <section className="card auth-card" aria-labelledby="auth-title">
+      <p className="eyebrow">Your shared workspace</p>
+      <h2 id="auth-title">{signup ? "Join the club." : "Welcome back."}</h2>
+      <p className="muted">
+        {signup
+          ? "Create an account to start adding to the shared list."
+          : "Log in to pick up where you left off."}
+      </p>
 
-      <form onSubmit={submit}>
-        <fieldset disabled={pending}>
+      <form className="auth-form" onSubmit={submit} aria-busy={pending}>
+        <fieldset className="form-fields" disabled={pending}>
           {signup && (
             <p>
-              <label>
+              <label className="form-label">
                 Name
-                <input name="name" autoComplete="name" required />
+                <input className="text-input" name="name" autoComplete="name" required />
               </label>
             </p>
           )}
 
           <p>
-            <label>
+            <label className="form-label">
               Email
               <input
+                className="text-input"
                 name="email"
                 type="email"
                 autoComplete="email"
@@ -67,9 +74,10 @@ export function AuthForm() {
           </p>
 
           <p>
-            <label>
+            <label className="form-label">
               Password
               <input
+                className="text-input"
                 name="password"
                 type="password"
                 minLength={8}
@@ -79,11 +87,12 @@ export function AuthForm() {
             </label>
           </p>
 
-          <button type="submit">
+          <button className="button" type="submit">
             {pending ? "Please wait..." : signup ? "Sign up" : "Log in"}
           </button>
 
           <button
+            className="button button-secondary"
             type="button"
             onClick={() => {
               setSignup(!signup);
@@ -94,7 +103,7 @@ export function AuthForm() {
           </button>
         </fieldset>
 
-        {error && <p role="alert">{error}</p>}
+        {error && <p className="alert" role="alert">{error}</p>}
       </form>
     </section>
   );

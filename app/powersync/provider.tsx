@@ -62,14 +62,14 @@ export function PowerSyncProvider({
 
   return (
     <>
-      {error && <p role="alert">{error}</p>}
+      {error && <p className="alert" role="alert">{error}</p>}
 
       {ready ? (
         <PowerSyncContext.Provider value={database}>
           {children}
         </PowerSyncContext.Provider>
       ) : (
-        <p>Opening local database...</p>
+        <p className="card muted" role="status">Opening local database...</p>
       )}
     </>
   );

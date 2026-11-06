@@ -79,14 +79,23 @@ export function SyncControls({
   }
 
   return (
-    <section>
-      <p>
-        {status.connected
-          ? "Connected to sync service"
-          : "Disconnected: local changes will upload when reconnected"}
-      </p>
+    <section className="workspace" aria-label="Shared todo workspace">
+      <div className="card sync-card">
+        <div className="sync-heading">
+          <div>
+            <p className="eyebrow">Local-first, shared together</p>
+            <p className="muted">
+              {status.connected
+                ? "Connected to sync service"
+                : "Disconnected: local changes will upload when reconnected"}
+            </p>
+          </div>
+          <span className={`status-badge${status.connected ? "" : " status-offline"}`}>
+            {status.connected ? "Connected" : "Offline"}
+          </span>
+        </div>
 
-      <p role="status">
+      <p className="muted" role="status">
         {queueError
           ? "Unable to determine whether local changes have uploaded."
           : isLoading || pendingCount === undefined
@@ -97,23 +106,26 @@ export function SyncControls({
       </p>
 
       {!status.hasSynced && (
-        <p>Initial sync has not finished; downloaded data may be incomplete.</p>
+        <p className="muted">Initial sync has not finished; downloaded data may be incomplete.</p>
       )}
 
-      {error && <p role="alert">{error}</p>}
-      {queueError && <p role="alert">{queueError.message}</p>}
+      {error && <p className="alert" role="alert">{error}</p>}
+      {queueError && <p className="alert" role="alert">{queueError.message}</p>}
       {status.uploadError && (
-        <p role="alert">Upload: {status.uploadError.message}</p>
+        <p className="alert" role="alert">Upload: {status.uploadError.message}</p>
       )}
       {status.downloadError && (
-        <p role="alert">Download: {status.downloadError.message}</p>
+        <p className="alert" role="alert">Download: {status.downloadError.message}</p>
       )}
+      </div>
 
-      <fieldset disabled={busy}>
+      <fieldset className="sync-content" disabled={busy}>
         {children}
-        <button type="button" onClick={() => void logout()}>
-          {busy ? "Logging out..." : "Log out"}
-        </button>
+        <div>
+          <button className="button button-secondary" type="button" onClick={() => void logout()}>
+            {busy ? "Logging out..." : "Log out"}
+          </button>
+        </div>
       </fieldset>
     </section>
   );
