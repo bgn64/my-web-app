@@ -1,36 +1,26 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Fairway
 
-## Getting Started
+A mobile-first golf scorecard built with Next.js, Better Auth, and PostgreSQL.
 
-First, run the development server:
+## Setup
+
+Install dependencies with `npm ci`. Configure PostgreSQL using `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, and `PGPASSWORD`, and set `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` for the application. Use a long, unique secret and set the URL to the application's actual origin. Then run:
 
 ```bash
+npm run db:migrate
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Alternatively, set `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET`, and `BETTER_AUTH_URL` in a local `.env` file and run `docker compose up --build`. Compose runs migrations before starting the application. Existing todo data is not deleted by the golf migrations.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+The migration seeds two **fictional** courses: Pine Hollow (9 holes) and Meadow Ridge (18 holes). Each hole has a par, handicap ranking, and yardages for three tees. Course editing is not included.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Playing
 
-## Learn More
+Create an account or sign in, then use **Play** to select a course and start a round. A player can have one active round. Select any hole to enter a score with the plus and minus controls, or clear a score to leave that hole blank. Changes are saved online; retry if a save fails. All tee yardages are shown without requiring a tee selection.
 
-To learn more about Next.js, take a look at the following resources:
+Finish a round even if some holes are blank, or discard an active round. Completed rounds are read-only and appear under **Rounds**. Partial-round totals and relative-to-par values include only scored holes. Round scorecards retain snapshots of course details from when the round started. Offline play, multiplayer, course management, and editing completed rounds are not included.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Checks
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Run `npm run lint`, `npm test`, and `npm run build`. The database test is skipped by default; to run it, migrate a dedicated test database, point the `PG*` variables at it, and set `FAIRWAY_TEST_DB=1` before running `npm test`. The test uses a transaction and rolls back its fixture data.

@@ -6,7 +6,4 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
-  advanced: {
-    useSecureCookies: false,
-  },
 });

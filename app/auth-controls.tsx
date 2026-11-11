@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { authClient } from "./auth-client";
 
-export function AuthForm() {
+export function AuthForm({ next = "/play" }: { next?: string }) {
   const [signup, setSignup] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
@@ -29,7 +30,7 @@ export function AuthForm() {
         return;
       }
 
-      window.location.assign("/");
+      window.location.assign(next);
     } catch (error) {
       setError(
         error instanceof Error ? error.message : "Unable to contact the server.",
@@ -40,8 +41,9 @@ export function AuthForm() {
   }
 
   return (
-    <section>
-      <h2>{signup ? "Create an account" : "Log in"}</h2>
+    <section className="auth-form">
+      <h2>{signup ? "Create your account" : "Welcome back"}</h2>
+      <p className="muted">{signup ? "Start keeping track of your rounds." : "Sign in to pick up where you left off."}</p>
 
       <form onSubmit={submit}>
         <fieldset disabled={pending}>
@@ -79,11 +81,12 @@ export function AuthForm() {
             </label>
           </p>
 
-          <button type="submit">
+          <button className="button button-primary full-width" type="submit">
             {pending ? "Please wait..." : signup ? "Sign up" : "Log in"}
           </button>
 
           <button
+            className="text-button full-width"
             type="button"
             onClick={() => {
               setSignup(!signup);
@@ -103,6 +106,7 @@ export function AuthForm() {
 export function LogoutButton() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
+  const router = useRouter();
 
   async function logout() {
     setPending(true);
@@ -116,7 +120,8 @@ export function LogoutButton() {
         return;
       }
 
-      window.location.assign("/");
+      router.push("/sign-in");
+      router.refresh();
     } catch (error) {
       setError(
         error instanceof Error ? error.message : "Unable to contact the server.",
@@ -128,7 +133,7 @@ export function LogoutButton() {
 
   return (
     <div>
-      <button type="button" onClick={logout} disabled={pending}>
+      <button className="menu-button" type="button" onClick={logout} disabled={pending}>
         {pending ? "Logging out..." : "Log out"}
       </button>
       {error && <p role="alert">{error}</p>}
