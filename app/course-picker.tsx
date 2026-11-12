@@ -39,7 +39,7 @@ export function CoursePicker({ courses }: { courses: Course[] }) {
         <div className="course-list" aria-label="Select a course">
           {visible.map((course) => (
             <button type="button" aria-pressed={selected === course.id} className={`course-option ${selected === course.id ? "selected" : ""}`} key={course.id} onClick={() => setSelected(course.id)}>
-              <span className="course-icon">⛳</span><span className="course-copy"><strong>{course.name}</strong><small>{course.location}</small></span><span className="course-holes">{course.hole_count} holes</span><span className="radio-dot" />
+              <span className="course-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M5 22V3m0 1c5-4 9 4 15 0v10c-6 4-10-4-15 0M2 22h6" /></svg></span><span className="course-copy"><strong>{course.name}</strong><small>{course.location}</small></span><span className="course-holes">{course.hole_count} holes</span><span className="radio-dot" />
             </button>
           ))}
         </div>

@@ -28,3 +28,15 @@ Retain qualifying friction even if it is later fixed or worked around; record th
 Before the final response, run one reporting pass. If candidates remain, from this file's directory run `npx --no-install next internal agent-feedback-instructions` once without piping or truncating its output. Follow its output or error guidance. If a network sandbox blocks it, retry with network access; if it still returns no output, continue normally.
 
 <!-- END:nextjs-agent-feedback -->
+
+## Tests and documentation
+
+- Keep test and documentation changes proportional to the feature's importance,
+  complexity, and risk in the context of the whole project, not its recency.
+- Update existing documentation where useful, focusing on information readers
+  need. Avoid lengthy descriptions of obvious controls or incidental details.
+- Test meaningful behavior, edge cases, and regressions according to their
+  risk. Prefer focused coverage that fits the existing suite over redundant,
+  brittle, or unnecessarily elaborate tests.
+- Do not omit necessary documentation or important tests merely to minimize
+  changes.

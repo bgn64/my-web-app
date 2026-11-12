@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogoutButton } from "./auth-controls";
+import { Brand } from "./brand";
 
 function Icon({ name }: { name: "play" | "rounds" | "back" }) {
   if (name === "play") return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M5 21h14M8 21V4l9 3-9 4" /><circle cx="17.5" cy="18" r="2" /></svg>;
@@ -15,7 +16,7 @@ export function AppShell({ children, name, email }: { children: React.ReactNode;
   const scorecard = path.endsWith("/scorecard");
   const playActive = path.startsWith("/play") || scorecard;
   const back = path === "/play/courses" ? "/play" : scorecard ? "/play" : path !== "/rounds" && path.startsWith("/rounds/") ? "/rounds" : null;
-  const title = path === "/play/courses" ? "Choose a course" : scorecard ? "Scorecard" : path.startsWith("/rounds/") ? "Round details" : path.startsWith("/rounds") ? "Rounds" : "Fairway";
+  const title = path === "/play/courses" ? "Choose a course" : scorecard ? "Scorecard" : path.startsWith("/rounds/") ? "Round details" : path.startsWith("/rounds") ? "Rounds" : null;
   const initials = name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]?.toUpperCase()).join("") || "A";
 
   return (
@@ -23,8 +24,8 @@ export function AppShell({ children, name, email }: { children: React.ReactNode;
       <header className="topbar">
         <div className="topbar-inner">
           <div className="header-title">
-            {back ? <Link className="back-button" href={back} aria-label="Go back"><Icon name="back" /></Link> : <span className="small-brand">F</span>}
-            <span>{title}</span>
+            {back ? <Link className="back-button" href={back} aria-label="Go back"><Icon name="back" /></Link> : <Brand />}
+            {title && <span>{title}</span>}
           </div>
           <details className="account-menu">
             <summary aria-label="Account menu" className="avatar">{initials}</summary>

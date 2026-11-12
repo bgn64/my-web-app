@@ -22,7 +22,7 @@ export default async function PlayPage() {
         <div className="feature-card">
           <div className="feature-top"><span className="feature-label">A GOOD DAY FOR GOLF</span><span className="feature-symbol">↗</span></div>
           <h2>Let&apos;s get out there.</h2><p>Choose a course and keep your score, one hole at a time.</p>
-          <div className="feature-art" aria-hidden="true"><span>⛳</span><span className="feature-art-line" /></div>
+          <div className="feature-art" aria-hidden="true" />
           <Link className="button button-light full-width" href="/play/courses">Start a round <span>→</span></Link>
         </div>
       )}

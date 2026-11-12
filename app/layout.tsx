@@ -13,8 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Fairway | Your round, simply",
+  title: "Tee Time | Your round, simply",
   description: "A simple scorecard for every round.",
+  icons: { icon: "/tee-time-logo.svg", apple: "/tee-time-logo.svg" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

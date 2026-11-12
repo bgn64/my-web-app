@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { closeRound, saveScore } from "./golf-actions";
 import type { Hole } from "./golf-data";
 import { relativeScore, summarize } from "./golf-summary";
+import { HolePicker } from "./hole-picker";
 import { ScoreSaveQueue } from "./score-save-queue";
 
 function ConfirmDialog({ closing, pending, error, summary, onClose, onConfirm }: {
@@ -34,6 +35,8 @@ export function Scorecard({ roundId, initialHoles }: { roundId: number; initialH
   const [holes, setHoles] = useState(initialHoles);
   const latestHoles = useRef(initialHoles);
   const [index, setIndex] = useState(0);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const pickerTrigger = useRef<HTMLButtonElement>(null);
   const [saveQueue] = useState(() => new ScoreSaveQueue((hole, strokes) => saveScore(roundId, hole, strokes)));
   const { error: saveError } = useSyncExternalStore(saveQueue.subscribe, saveQueue.getSnapshot, saveQueue.getSnapshot);
   const [closing, setClosing] = useState<"finish" | "discard" | null>(null);
@@ -113,29 +116,34 @@ export function Scorecard({ roundId, initialHoles }: { roundId: number; initialH
       <div className="progress-track"><div style={{ width: `${summary.played / summary.total * 100}%` }} /></div>
       {saveError && <p className="save-status error-message" role="alert">{saveError} <button className="inline-button" disabled={pending} onClick={() => saveQueue.retry()}>Retry</button></p>}
 
-      <div className="section-heading"><span>SELECT A HOLE</span><span>{hole.hole_number} / {holes.length}</span></div>
-      <div className="hole-grid" aria-label="Choose a hole">
-        {holes.map((item, i) => <button key={item.hole_number} type="button" disabled={pending} className={`hole-chip ${index === i ? "current" : ""} ${item.strokes !== null ? "scored" : ""}`} aria-label={`Hole ${item.hole_number}${item.strokes !== null ? `, score ${item.strokes}` : ", not scored"}`} aria-pressed={index === i} onClick={() => setIndex(i)}>{item.hole_number}</button>)}
-      </div>
       <div className="hole-card">
-        <div className="hole-card-header"><div><span className="eyebrow">NOW PLAYING</span><h2>Hole {hole.hole_number}</h2></div><div className="par-badge">PAR {hole.par}</div></div>
+        <div className="hole-card-header"><div><span className="eyebrow">NOW PLAYING</span><h2 aria-live="polite" aria-atomic="true">Hole {hole.hole_number}</h2></div><div className="par-badge">PAR {hole.par}</div></div>
         <div className="hole-meta"><span>Handicap <strong>{hole.handicap}</strong></span><span>Yardage by tee</span></div>
         <div className="tee-row">{hole.yardages.map((tee) => <div key={tee.name}><span>{tee.name}</span><strong>{tee.yards} <small>yds</small></strong></div>)}</div>
         <div className="score-entry">
           <span className="eyebrow">YOUR SCORE</span>
           <div className="stepper">
             <button type="button" aria-label="Decrease score" disabled={pending || hole.strokes === null || hole.strokes <= 1} onClick={() => save((current) => current.strokes === null ? null : Math.max(1, current.strokes - 1))}>−</button>
-            <div className="score-value" aria-label={hole.strokes === null ? "No score entered" : `Score ${hole.strokes}`}>{hole.strokes ?? "—"}</div>
+            <div className="score-value" aria-live="polite" aria-atomic="true" aria-label={hole.strokes === null ? "No score entered" : `Score ${hole.strokes}`}>{hole.strokes ?? "—"}</div>
             <button type="button" aria-label="Increase score" disabled={pending || hole.strokes === 99} onClick={() => save((current) => current.strokes === null ? current.par : Math.min(99, current.strokes + 1))}>+</button>
           </div>
-          <p>{hole.strokes === null ? "Tap + to start at par" : `${relativeScore(hole.strokes - hole.par)} for this hole`}</p>
-          {hole.strokes !== null && <button className="inline-button" disabled={pending} onClick={() => save(() => null)}>Clear score</button>}
+          <div className="quick-scores" role="group" aria-label="Quick scores">
+            {[-1, 0, 1, 2].map((offset) => {
+              const score = hole.par + offset;
+              return <button key={offset} type="button" disabled={pending} aria-label={`${score} strokes`} aria-pressed={hole.strokes === score} onClick={() => save(() => score)}>{score}</button>;
+            })}
+          </div>
+          {hole.strokes !== null && <button type="button" className="inline-button" disabled={pending} onClick={() => save(() => null)}>Clear score</button>}
+        </div>
+        <div className="hole-navigator" role="group" aria-label="Hole navigation">
+          <button type="button" className="hole-previous" aria-label="Previous hole" disabled={index === 0 || pending} onClick={() => setIndex(index - 1)}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="m14 5-7 7 7 7" /></svg></button>
+          <button ref={pickerTrigger} type="button" className="hole-picker-trigger" aria-label={`Hole ${hole.hole_number} of ${holes.length}, jump to hole`} aria-haspopup="dialog" aria-expanded={pickerOpen} aria-controls={pickerOpen ? "hole-picker" : undefined} disabled={pending} onClick={() => setPickerOpen(true)}>
+            <span>Hole {hole.hole_number} <span className="hole-count">of {holes.length}</span></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+          </button>
+          <button type="button" className="hole-next" aria-label="Next hole" disabled={index === holes.length - 1 || pending} onClick={() => setIndex(index + 1)}>Next <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M4 12h16m-6-6 6 6-6 6" /></svg></button>
         </div>
       </div>
-      <div className="hole-controls">
-        <button className="button button-secondary" disabled={index === 0 || pending} onClick={() => setIndex(index - 1)}>← Previous</button>
-        <button className="button button-secondary" disabled={index === holes.length - 1 || pending} onClick={() => setIndex(index + 1)}>Next hole →</button>
-      </div>
+      {pickerOpen && <HolePicker holes={holes} index={index} triggerRef={pickerTrigger} onChoose={(next) => { setIndex(next); setPickerOpen(false); }} onClose={() => setPickerOpen(false)} />}
       <button className="button button-primary full-width finish-button" disabled={pending} onClick={() => setClosing("finish")}>Finish round</button>
       <button className="text-button full-width discard-button" disabled={pending} onClick={() => setClosing("discard")}>Discard round</button>
       {closing && <ConfirmDialog closing={closing} pending={pending} error={closeError} summary={summary} onClose={() => { setClosing(null); setCloseError(""); }} onConfirm={close} />}
