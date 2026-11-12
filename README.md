@@ -19,6 +19,8 @@ The migration seeds two **fictional** courses: Pine Hollow (9 holes) and Meadow 
 
 Create an account or sign in, then use **Play** to select a course and start a round. A player can have one active round. Select any hole to enter a score with the plus and minus controls, or clear a score to leave that hole blank. Changes are saved online; retry if a save fails. All tee yardages are shown without requiring a tee selection.
 
+Scores and totals update immediately, and scoring and hole navigation remain available while saves run quietly in the background. Saves run one at a time, keeping only the latest pending score per hole. A failure pauses saving and shows Retry; edits remain visible and can still be changed. Retry saves the latest unsaved scores across all holes. Finishing waits for all scores to save; confirmed discarding waits for any in-flight save, then abandons queued edits and deletes the round. Leaving with unsaved changes prompts a warning. The queue is held in memory, not persisted for offline use.
+
 Finish a round even if some holes are blank, or discard an active round. Completed rounds are read-only and appear under **Rounds**. Partial-round totals and relative-to-par values include only scored holes. Round scorecards retain snapshots of course details from when the round started. Offline play, multiplayer, course management, and editing completed rounds are not included.
 
 ## Checks

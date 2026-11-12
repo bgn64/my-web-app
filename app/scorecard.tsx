@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { closeRound, saveScore } from "./golf-actions";
 import type { Hole } from "./golf-data";
 import { relativeScore, summarize } from "./golf-summary";
+import { ScoreSaveQueue } from "./score-save-queue";
 
 function ConfirmDialog({ closing, pending, error, summary, onClose, onConfirm }: {
   closing: "finish" | "discard";
@@ -31,26 +32,26 @@ function ConfirmDialog({ closing, pending, error, summary, onClose, onConfirm }:
 
 export function Scorecard({ roundId, initialHoles }: { roundId: number; initialHoles: Hole[] }) {
   const [holes, setHoles] = useState(initialHoles);
+  const latestHoles = useRef(initialHoles);
   const [index, setIndex] = useState(0);
-  const [saving, setSaving] = useState(false);
-  const [failed, setFailed] = useState(false);
-  const [message, setMessage] = useState("All changes saved");
+  const [saveQueue] = useState(() => new ScoreSaveQueue((hole, strokes) => saveScore(roundId, hole, strokes)));
+  const { error: saveError } = useSyncExternalStore(saveQueue.subscribe, saveQueue.getSnapshot, saveQueue.getSnapshot);
   const [closing, setClosing] = useState<"finish" | "discard" | null>(null);
   const [pending, setPending] = useState(false);
   const [closeError, setCloseError] = useState("");
-  const inFlight = useRef(false);
+  const closingInFlight = useRef(false);
   const router = useRouter();
   const hole = holes[index];
   const summary = summarize(holes);
 
   useEffect(() => {
-    if (!saving && !failed) return;
     function beforeUnload(event: BeforeUnloadEvent) {
-      event.preventDefault();
+      if (saveQueue.getSnapshot().hasUnsavedChanges) event.preventDefault();
     }
     function warnBeforeNavigation(event: MouseEvent) {
+      if (!saveQueue.getSnapshot().hasUnsavedChanges) return;
       if (!(event.target instanceof Element) || !event.target.closest("a[href]")) return;
-      if (!window.confirm("Your score has not been saved yet. Leave this page?")) event.preventDefault();
+      if (!window.confirm("Your scores have not been saved yet. Leave this page?")) event.preventDefault();
     }
     window.addEventListener("beforeunload", beforeUnload);
     document.addEventListener("click", warnBeforeNavigation, true);
@@ -58,49 +59,48 @@ export function Scorecard({ roundId, initialHoles }: { roundId: number; initialH
       window.removeEventListener("beforeunload", beforeUnload);
       document.removeEventListener("click", warnBeforeNavigation, true);
     };
-  }, [saving, failed]);
+  }, [saveQueue]);
 
-  async function save(value: number | null) {
-    if (inFlight.current) return;
-    inFlight.current = true;
-    setSaving(true);
-    setFailed(false);
-    setMessage("Saving...");
-    setHoles((current) => current.map((item, i) => i === index ? { ...item, strokes: value } : item));
-    try {
-      const result = await saveScore(roundId, hole.hole_number, value);
-      if (!result.ok) {
-        setFailed(true);
-        setMessage(result.error);
-      } else {
-        setMessage("All changes saved");
-      }
-    } catch (error) {
-      console.error("Could not save score:", error);
-      setFailed(true);
-      setMessage("Score not saved. Check your connection and try again.");
-    } finally {
-      inFlight.current = false;
-      setSaving(false);
-    }
+  function save(update: (current: Hole) => number | null) {
+    if (closingInFlight.current) return;
+    const current = latestHoles.current[index];
+    const strokes = update(current);
+    if (strokes === current.strokes) return;
+    const updated = latestHoles.current.map((item, i) => i === index ? { ...item, strokes } : item);
+    latestHoles.current = updated;
+    setHoles(updated);
+    saveQueue.enqueue(current.hole_number, strokes);
   }
 
   async function close() {
-    if (!closing || pending || saving || failed) return;
+    if (!closing || closingInFlight.current) return;
+    closingInFlight.current = true;
     setPending(true);
     setCloseError("");
+    let closed = false;
     try {
+      if (closing === "finish" && !await saveQueue.flush()) {
+        setCloseError("Some scores could not be saved. Choose Keep playing, then Retry before finishing.");
+        return;
+      }
+      if (closing === "discard") await saveQueue.pause();
       const result = await closeRound(roundId, closing);
       if (!result.ok) setCloseError(result.error);
       else {
+        if (closing === "discard") saveQueue.discardPending();
         router.push(closing === "finish" ? `/rounds/${roundId}` : "/play");
         router.refresh();
+        closed = true;
       }
     } catch (error) {
       console.error("Could not close round:", error);
       setCloseError("Could not reach the server. Please check the round before retrying.");
     } finally {
-      setPending(false);
+      if (!closed) {
+        if (closing === "discard") saveQueue.resume();
+        closingInFlight.current = false;
+        setPending(false);
+      }
     }
   }
 
@@ -111,11 +111,11 @@ export function Scorecard({ roundId, initialHoles }: { roundId: number; initialH
         <div className="score-progress-total"><span className="eyebrow">TO PAR</span><strong>{summary.played ? relativeScore(summary.relative) : "—"}</strong></div>
       </div>
       <div className="progress-track"><div style={{ width: `${summary.played / summary.total * 100}%` }} /></div>
-      <p className={failed ? "save-status error-message" : "save-status"} role="status">{message} {failed && <button className="inline-button" onClick={() => save(hole.strokes)}>Retry</button>}</p>
+      {saveError && <p className="save-status error-message" role="alert">{saveError} <button className="inline-button" disabled={pending} onClick={() => saveQueue.retry()}>Retry</button></p>}
 
       <div className="section-heading"><span>SELECT A HOLE</span><span>{hole.hole_number} / {holes.length}</span></div>
       <div className="hole-grid" aria-label="Choose a hole">
-        {holes.map((item, i) => <button key={item.hole_number} type="button" disabled={saving || failed || pending} className={`hole-chip ${index === i ? "current" : ""} ${item.strokes !== null ? "scored" : ""}`} aria-label={`Hole ${item.hole_number}${item.strokes !== null ? `, score ${item.strokes}` : ", not scored"}`} aria-pressed={index === i} onClick={() => setIndex(i)}>{item.hole_number}</button>)}
+        {holes.map((item, i) => <button key={item.hole_number} type="button" disabled={pending} className={`hole-chip ${index === i ? "current" : ""} ${item.strokes !== null ? "scored" : ""}`} aria-label={`Hole ${item.hole_number}${item.strokes !== null ? `, score ${item.strokes}` : ", not scored"}`} aria-pressed={index === i} onClick={() => setIndex(i)}>{item.hole_number}</button>)}
       </div>
       <div className="hole-card">
         <div className="hole-card-header"><div><span className="eyebrow">NOW PLAYING</span><h2>Hole {hole.hole_number}</h2></div><div className="par-badge">PAR {hole.par}</div></div>
@@ -124,20 +124,20 @@ export function Scorecard({ roundId, initialHoles }: { roundId: number; initialH
         <div className="score-entry">
           <span className="eyebrow">YOUR SCORE</span>
           <div className="stepper">
-            <button type="button" aria-label="Decrease score" disabled={saving || failed || pending || hole.strokes === null || hole.strokes <= 1} onClick={() => save((hole.strokes ?? 2) - 1)}>−</button>
+            <button type="button" aria-label="Decrease score" disabled={pending || hole.strokes === null || hole.strokes <= 1} onClick={() => save((current) => current.strokes === null ? null : Math.max(1, current.strokes - 1))}>−</button>
             <div className="score-value" aria-label={hole.strokes === null ? "No score entered" : `Score ${hole.strokes}`}>{hole.strokes ?? "—"}</div>
-            <button type="button" aria-label="Increase score" disabled={saving || failed || pending || hole.strokes === 99} onClick={() => save(hole.strokes === null ? hole.par : hole.strokes + 1)}>+</button>
+            <button type="button" aria-label="Increase score" disabled={pending || hole.strokes === 99} onClick={() => save((current) => current.strokes === null ? current.par : Math.min(99, current.strokes + 1))}>+</button>
           </div>
           <p>{hole.strokes === null ? "Tap + to start at par" : `${relativeScore(hole.strokes - hole.par)} for this hole`}</p>
-          {hole.strokes !== null && <button className="inline-button" disabled={saving || failed || pending} onClick={() => save(null)}>Clear score</button>}
+          {hole.strokes !== null && <button className="inline-button" disabled={pending} onClick={() => save(() => null)}>Clear score</button>}
         </div>
       </div>
       <div className="hole-controls">
-        <button className="button button-secondary" disabled={index === 0 || saving || failed || pending} onClick={() => setIndex(index - 1)}>← Previous</button>
-        <button className="button button-secondary" disabled={index === holes.length - 1 || saving || failed || pending} onClick={() => setIndex(index + 1)}>Next hole →</button>
+        <button className="button button-secondary" disabled={index === 0 || pending} onClick={() => setIndex(index - 1)}>← Previous</button>
+        <button className="button button-secondary" disabled={index === holes.length - 1 || pending} onClick={() => setIndex(index + 1)}>Next hole →</button>
       </div>
-      <button className="button button-primary full-width finish-button" disabled={saving || failed || pending} onClick={() => setClosing("finish")}>Finish round</button>
-      <button className="text-button full-width discard-button" disabled={saving || failed || pending} onClick={() => setClosing("discard")}>Discard round</button>
+      <button className="button button-primary full-width finish-button" disabled={pending} onClick={() => setClosing("finish")}>Finish round</button>
+      <button className="text-button full-width discard-button" disabled={pending} onClick={() => setClosing("discard")}>Discard round</button>
       {closing && <ConfirmDialog closing={closing} pending={pending} error={closeError} summary={summary} onClose={() => { setClosing(null); setCloseError(""); }} onConfirm={close} />}
     </>
   );
