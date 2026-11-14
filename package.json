@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test": "node --experimental-strip-types --test tests/*.test.mjs",
     "db:migrate": "node-pg-migrate up --config-file migrations.config.cjs",
+    "catalog:import": "node scripts/import-course-catalog.mjs",
     "db:migrate:create": "node-pg-migrate create --migration-file-language sql"
   },
   "dependencies": {

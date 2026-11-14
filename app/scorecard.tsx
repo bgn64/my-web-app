@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { closeRound, saveScore } from "./golf-actions";
-import type { Hole } from "./golf-data";
+import type { RoundHole } from "./golf-types";
 import { relativeScore, summarize } from "./golf-summary";
 import { HolePicker } from "./hole-picker";
 import { ScoreSaveQueue } from "./score-save-queue";
@@ -31,7 +31,7 @@ function ConfirmDialog({ closing, pending, error, summary, onClose, onConfirm }:
   </dialog>;
 }
 
-export function Scorecard({ roundId, initialHoles }: { roundId: number; initialHoles: Hole[] }) {
+export function Scorecard({ roundId, initialHoles }: { roundId: number; initialHoles: RoundHole[] }) {
   const [holes, setHoles] = useState(initialHoles);
   const latestHoles = useRef(initialHoles);
   const [index, setIndex] = useState(0);
@@ -64,7 +64,7 @@ export function Scorecard({ roundId, initialHoles }: { roundId: number; initialH
     };
   }, [saveQueue]);
 
-  function save(update: (current: Hole) => number | null) {
+  function save(update: (current: RoundHole) => number | null) {
     if (closingInFlight.current) return;
     const current = latestHoles.current[index];
     const strokes = update(current);

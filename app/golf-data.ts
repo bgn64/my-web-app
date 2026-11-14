@@ -4,24 +4,10 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "./auth";
 import { getDb } from "./db";
-
-export type Yardage = { name: string; yards: number };
-export type Hole = {
-  hole_number: number;
-  par: number;
-  handicap: number;
-  yardages: Yardage[];
-  strokes: number | null;
-};
-export type GolfRound = {
-  id: number;
-  course_name: string;
-  course_location: string;
-  started_at: Date;
-  finished_at: Date | null;
-  holes: Hole[];
-};
-export type Course = { id: number; name: string; location: string; hole_count: number };
+import { loadCourseScorecard } from "./course-hydration";
+import type { Course, CourseCatalogPage, GolfRound } from "./golf-types";
+import { presentRound } from "./round-snapshot";
+import type { StoredRound } from "./round-snapshot";
 
 export async function getSession() {
   return auth.api.getSession({ headers: await headers() });
@@ -33,42 +19,51 @@ export async function requireUser(next = "/play") {
   return session.user;
 }
 
-export async function getCourses(): Promise<Course[]> {
+export async function getCourses(query = "", page = 1): Promise<CourseCatalogPage> {
+  if (query.length > 200 || !Number.isSafeInteger(page) || page < 1 || page > 100000) {
+    throw new Error("Invalid course search.");
+  }
+  const search = `%${query.trim().replace(/[\\%_]/g, "\\$&")}%`;
   const result = await getDb().query<Course>(
-    `SELECT c.id, c.name, c.location, count(h.hole_number)::int AS hole_count
-     FROM courses c JOIN course_holes h ON h.course_id = c.id
-     GROUP BY c.id ORDER BY c.name`,
+    `SELECT c.id, c.name, c.location
+     FROM courses c
+     WHERE c.name ILIKE $1 ESCAPE '\\' OR c.location ILIKE $1 ESCAPE '\\'
+     ORDER BY c.name, c.id LIMIT 50 OFFSET $2`, [search, (page - 1) * 50],
   );
-  return result.rows;
+  const count = await getDb().query<{ total: number }>(
+    `SELECT count(*)::int AS total FROM courses
+     WHERE name ILIKE $1 ESCAPE '\\' OR location ILIKE $1 ESCAPE '\\'`, [search],
+  );
+  return { courses: result.rows, total: count.rows[0].total, query, page };
+}
+
+export async function requireCourseScorecard(courseId: number) {
+  return loadCourseScorecard(getDb(), courseId);
 }
 
 export async function getRounds(userId: string, active: boolean): Promise<GolfRound[]> {
-  const result = await getDb().query<GolfRound>(
-    `SELECT r.id, r.course_name, r.course_location, r.started_at, r.finished_at,
-      COALESCE(json_agg(json_build_object(
-        'hole_number', h.hole_number, 'par', h.par, 'handicap', h.handicap,
-        'yardages', h.yardages, 'strokes', h.strokes
-      ) ORDER BY h.hole_number) FILTER (WHERE h.round_id IS NOT NULL), '[]') AS holes
-     FROM golf_rounds r LEFT JOIN round_holes h ON h.round_id = r.id
+  const result = await getDb().query<StoredRound>(
+    `SELECT r.id, r.snapshot, r.started_at, r.finished_at,
+      COALESCE(json_agg(json_build_object('hole_number', s.hole_number, 'strokes', s.strokes)
+        ORDER BY s.hole_number) FILTER (WHERE s.round_id IS NOT NULL), '[]') AS scores
+     FROM golf_rounds r LEFT JOIN round_scores s ON s.round_id = r.id
      WHERE r.user_id = $1 AND (r.finished_at IS NULL) = $2
      GROUP BY r.id ORDER BY COALESCE(r.finished_at, r.started_at) DESC, r.id DESC`,
     [userId, active],
   );
-  return result.rows;
+  return result.rows.map(presentRound);
 }
 
 export async function getRound(userId: string, id: number): Promise<GolfRound | null> {
-  const result = await getDb().query<GolfRound>(
-    `SELECT r.id, r.course_name, r.course_location, r.started_at, r.finished_at,
-      COALESCE(json_agg(json_build_object(
-        'hole_number', h.hole_number, 'par', h.par, 'handicap', h.handicap,
-        'yardages', h.yardages, 'strokes', h.strokes
-      ) ORDER BY h.hole_number) FILTER (WHERE h.round_id IS NOT NULL), '[]') AS holes
-     FROM golf_rounds r LEFT JOIN round_holes h ON h.round_id = r.id
+  const result = await getDb().query<StoredRound>(
+    `SELECT r.id, r.snapshot, r.started_at, r.finished_at,
+      COALESCE(json_agg(json_build_object('hole_number', s.hole_number, 'strokes', s.strokes)
+        ORDER BY s.hole_number) FILTER (WHERE s.round_id IS NOT NULL), '[]') AS scores
+     FROM golf_rounds r LEFT JOIN round_scores s ON s.round_id = r.id
      WHERE r.user_id = $1 AND r.id = $2 GROUP BY r.id`,
     [userId, id],
   );
-  return result.rows[0] ?? null;
+  return result.rows[0] ? presentRound(result.rows[0]) : null;
 }
 
 export function parseId(value: string): number | null {

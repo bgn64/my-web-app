@@ -1,8 +1,8 @@
 import { useEffect, useRef, type RefObject } from "react";
-import type { Hole } from "./golf-data";
+import type { RoundHole } from "./golf-types";
 
 export function HolePicker({ holes, index, triggerRef, onChoose, onClose }: {
-  holes: Hole[];
+  holes: RoundHole[];
   index: number;
   triggerRef: RefObject<HTMLButtonElement | null>;
   onChoose: (index: number) => void;

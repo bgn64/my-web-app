@@ -92,11 +92,14 @@ input::placeholder { color: var(--muted); opacity: 1; }
 .course-copy strong, .course-copy small { display: block; overflow-wrap: anywhere; }
 .course-copy strong { font-size: 15px; font-weight: 550; }
 .course-copy small { color: var(--muted); margin-top: 5px; font-size: 12px; }
-.course-holes { white-space: nowrap; color: var(--muted); font-size: 12px; }
 .radio-dot { width: 17px; height: 17px; flex: 0 0 17px; border: 1px solid var(--muted); border-radius: 50%; }
 .selected .radio-dot { border: 5px solid var(--accent); }
 .start-button { margin-top: 24px; justify-content: space-between; }
 .helper-text { text-align: center; color: var(--muted); font-size: 13px; }
+.catalog-pagination { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 20px; font-size: 12px; color: var(--muted); }
+.catalog-pagination .button { min-height: 44px; padding: 8px 14px; }
+.catalog-credit { margin-top: 24px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.catalog-credit a { text-decoration: underline; }
 .round-card { display: flex; align-items: center; gap: 15px; padding: 20px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
 .round-card-main { flex: 1; min-width: 0; }
 .round-card h2 { margin: 8px 0 5px; font-size: 21px; font-weight: 550; letter-spacing: -.03em; }
