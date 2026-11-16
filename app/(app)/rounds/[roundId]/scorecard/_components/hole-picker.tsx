@@ -6,7 +6,7 @@ import {
 	type SyntheticEvent,
 	type RefObject,
 } from "react";
-import type { RoundHole } from "./golf-types";
+import type { RoundHole } from "../../../../../_features/rounds/types";
 
 type HolePickerProps = {
 	holes: RoundHole[];

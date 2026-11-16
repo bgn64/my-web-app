@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { CourseDetailsError, normalizeCourseScorecard } from "../app/course-scorecard.ts";
+import { CourseDetailsError, normalizeCourseScorecard } from "../app/_features/courses/course-scorecard.ts";
 import { coursePayload, externalId } from "./fixtures/course.mjs";
 
 const normalize = (payload) => normalizeCourseScorecard(payload, externalId, 42);

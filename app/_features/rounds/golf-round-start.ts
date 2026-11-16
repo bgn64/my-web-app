@@ -1,6 +1,6 @@
 import type { Pool } from "pg";
-import { CourseDetailsError } from "./course-scorecard.ts";
-import type { CourseScorecard } from "./golf-types";
+import { CourseDetailsError } from "../courses/course-scorecard.ts";
+import type { CourseScorecard } from "../courses/types";
 import { parseRoundSnapshot } from "./round-snapshot.ts";
 
 /** Creates the round and its initial scores together under the user's row lock. */

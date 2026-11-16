@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import type { ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
-import type { Course, CourseCatalogPage } from "./golf-types";
-import { startRound } from "./golf-actions";
+import type { Course, CourseCatalogPage } from "../../../../_features/courses/types";
+import { startRound } from "../../../../_features/rounds/actions";
 
 type CoursePickerProps = {
 	initialCatalog: CourseCatalogPage;

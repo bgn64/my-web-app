@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { relativeScore, summarize } from "../app/golf-summary.ts";
+import { relativeScore, summarize } from "../app/_features/rounds/golf-summary.ts";
 
 test("partial totals include only scored holes", () =>
 {

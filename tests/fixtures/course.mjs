@@ -1,5 +1,5 @@
-import { normalizeCourseScorecard } from "../../app/course-scorecard.ts";
-import { parseRoundSnapshot } from "../../app/round-snapshot.ts";
+import { normalizeCourseScorecard } from "../../app/_features/courses/course-scorecard.ts";
+import { parseRoundSnapshot } from "../../app/_features/rounds/round-snapshot.ts";
 
 export const externalId = "df3ffa39-15be-4842-940a-7d470553a640";
 

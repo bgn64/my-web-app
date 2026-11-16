@@ -1,4 +1,4 @@
-import type { CourseScorecard, PhysicalTee, ScorecardHole, TeeRating } from "./golf-types";
+import type { CourseScorecard, PhysicalTee, ScorecardHole, TeeRating } from "./types";
 
 export class CourseDetailsError extends Error
 {

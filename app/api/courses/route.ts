@@ -1,4 +1,5 @@
-import { getCourses, getSession } from "../../golf-data";
+import { getSession } from "../../_features/auth/session";
+import { getCourses } from "../../_features/courses/data";
 
 export async function GET(request: Request)
 {

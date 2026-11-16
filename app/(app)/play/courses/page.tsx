@@ -1,5 +1,6 @@
-import { CoursePicker } from "../../../course-picker";
-import { getCourses, requireUser } from "../../../golf-data";
+import { CoursePicker } from "./_components/course-picker";
+import { requireUser } from "../../../_features/auth/session";
+import { getCourses } from "../../../_features/courses/data";
 
 type CoursesPageProps = {
 	searchParams: Promise<{

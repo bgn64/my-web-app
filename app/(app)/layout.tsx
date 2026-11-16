@@ -1,6 +1,6 @@
 import { Suspense } from "react";
-import { AppShell } from "../app-shell";
-import { getSession } from "../golf-data";
+import { AppShell } from "./_components/app-shell";
+import { getSession } from "../_features/auth/session";
 
 type AppLayoutProps = {
 	children: React.ReactNode;

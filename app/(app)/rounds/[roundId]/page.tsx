@@ -1,6 +1,8 @@
 import { notFound, redirect } from "next/navigation";
-import { getRound, parseId, requireUser } from "../../../golf-data";
-import { relativeScore, summarize } from "../../../golf-summary";
+import { parseId } from "../../../_lib/parse-id";
+import { requireUser } from "../../../_features/auth/session";
+import { getRound } from "../../../_features/rounds/data";
+import { relativeScore, summarize } from "../../../_features/rounds/golf-summary";
 
 type RoundDetailPageProps = {
 	params: Promise<{

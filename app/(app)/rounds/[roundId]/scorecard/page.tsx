@@ -1,6 +1,8 @@
 import { notFound, redirect } from "next/navigation";
-import { getRound, parseId, requireUser } from "../../../../golf-data";
-import { Scorecard } from "../../../../scorecard";
+import { parseId } from "../../../../_lib/parse-id";
+import { requireUser } from "../../../../_features/auth/session";
+import { getRound } from "../../../../_features/rounds/data";
+import { Scorecard } from "./_components/scorecard";
 
 type ScorecardPageProps = {
 	params: Promise<{

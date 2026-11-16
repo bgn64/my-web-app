@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
 
-const source = readFileSync(new URL("../app/course-picker.tsx", import.meta.url), "utf8");
+const source = readFileSync(new URL("../app/(app)/play/courses/_components/course-picker.tsx", import.meta.url), "utf8");
 const compiled = ts.transpileModule(source, {
 	compilerOptions: {
 		module: ts.ModuleKind.CommonJS,
@@ -72,7 +72,7 @@ function renderPicker(overrides = {}, startResult = {
 				push: (url) => routes.push(url),
 			}),
 		},
-		"./golf-actions": {
+		"../../../../_features/rounds/actions": {
 			startRound: async (id) =>
 			{
 				starts.push(id);

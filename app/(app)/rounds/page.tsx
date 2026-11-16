@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { getRounds, requireUser } from "../../golf-data";
-import { relativeScore, summarize } from "../../golf-summary";
+import { requireUser } from "../../_features/auth/session";
+import { getRounds } from "../../_features/rounds/data";
+import { relativeScore, summarize } from "../../_features/rounds/golf-summary";
 
 export default async function RoundsPage()
 {

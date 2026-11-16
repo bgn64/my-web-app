@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { setImmediate } from "node:timers/promises";
-import { ScoreSaveQueue } from "../app/score-save-queue.ts";
+import { ScoreSaveQueue } from "../app/(app)/rounds/[roundId]/scorecard/_components/score-save-queue.ts";
 
 function controlledQueue()
 {

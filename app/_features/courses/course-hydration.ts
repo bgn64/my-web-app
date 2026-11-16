@@ -1,6 +1,6 @@
 import type { Pool, PoolClient } from "pg";
 import { CourseDetailsError, normalizeCourseScorecard } from "./course-scorecard.ts";
-import type { CourseScorecard, PhysicalTee, ScorecardHole } from "./golf-types";
+import type { CourseScorecard, PhysicalTee, ScorecardHole } from "./types";
 
 const LOCK_NAMESPACE = 928331;
 

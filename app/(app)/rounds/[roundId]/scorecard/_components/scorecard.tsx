@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore, type SyntheticEvent } from "react";
 import { useRouter } from "next/navigation";
-import { closeRound, saveScore } from "./golf-actions";
-import type { RoundHole } from "./golf-types";
-import { relativeScore, summarize } from "./golf-summary";
+import { closeRound, saveScore } from "../../../../../_features/rounds/actions";
+import type { RoundHole } from "../../../../../_features/rounds/types";
+import { relativeScore, summarize } from "../../../../../_features/rounds/golf-summary";
 import { HolePicker } from "./hole-picker";
 import { ScoreSaveQueue } from "./score-save-queue";
 

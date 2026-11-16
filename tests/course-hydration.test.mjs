@@ -2,10 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import pg from "pg";
-import { loadCourseScorecard } from "../app/course-hydration.ts";
-import { createScorecardRound } from "../app/golf-round-start.ts";
+import { loadCourseScorecard } from "../app/_features/courses/course-hydration.ts";
+import { createScorecardRound } from "../app/_features/rounds/golf-round-start.ts";
 import { coursePayload } from "./fixtures/course.mjs";
-import { presentRound } from "../app/round-snapshot.ts";
+import { presentRound } from "../app/_features/rounds/round-snapshot.ts";
 
 const options = {
 	skip: process.env.FAIRWAY_TEST_DB !== "1",

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseRoundSnapshot, presentRound } from "../app/round-snapshot.ts";
+import { parseRoundSnapshot, presentRound } from "../app/_features/rounds/round-snapshot.ts";
 import { roundSnapshot } from "./fixtures/course.mjs";
 
 test("snapshot presentation reads only historical golf data and separate scores", () =>

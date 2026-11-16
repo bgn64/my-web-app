@@ -2,6 +2,14 @@
 
 A mobile-first golf scorecard built with Next.js, Better Auth, and PostgreSQL, using Tee Time's navy-and-mint Night styling.
 
+## Application structure
+
+Routes and their private UI live together under `app`; shared presentation is in `app/_components`.
+`app/_features` owns authentication, course data and normalization, and round operations and scoring.
+Shared database connectivity and ID parsing live in `app/_lib`. Server Actions delegate round work
+to the rounds feature, while route handlers retain HTTP concerns. The existing `tests` directory
+exercises these modules and route-local behavior.
+
 ## Setup
 
 Install dependencies with `npm ci`. Configure PostgreSQL using `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, and `PGPASSWORD`, and set `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` for the application. Use a long, unique secret and set the URL to the application's actual origin. Then run:

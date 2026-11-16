@@ -1,12 +1,13 @@
-"use server";
+import "server-only";
 
-import { revalidatePath } from "next/cache";
-import { getDb } from "./db";
-import { getSession, parseId, requireCourseScorecard } from "./golf-data";
-import { CourseDetailsError } from "./course-scorecard";
+import { getDb } from "../../_lib/db";
+import { parseId } from "../../_lib/parse-id";
+import { getSession } from "../auth/session";
+import { requireCourseScorecard } from "../courses/data";
+import { CourseDetailsError } from "../courses/course-scorecard";
 import { createScorecardRound } from "./golf-round-start";
 
-type Result = {
+export type Result = {
 	ok: true;
 	roundId?: number;
 } | {
@@ -20,19 +21,7 @@ async function userId()
 	return session?.user.id ?? null;
 }
 
-function invalidate(roundId?: number)
-{
-	revalidatePath("/play");
-	revalidatePath("/rounds");
-
-	if (roundId)
-	{
-		revalidatePath(`/rounds/${roundId}`);
-		revalidatePath(`/rounds/${roundId}/scorecard`);
-	}
-}
-
-export async function startRound(courseId: string): Promise<Result>
+export async function startRound(courseId: string, invalidate: (roundId: number) => void): Promise<Result>
 {
 	const user = await userId();
 	const course = parseId(courseId);
@@ -95,7 +84,12 @@ export async function startRound(courseId: string): Promise<Result>
 	}
 }
 
-export async function saveScore(roundId: number, hole: number, strokes: number | null): Promise<Result>
+export async function saveScore(
+	roundId: number,
+	hole: number,
+	strokes: number | null,
+	invalidate: (roundId: number) => void,
+): Promise<Result>
 {
 	const user = await userId();
 
@@ -177,7 +171,11 @@ export async function saveScore(roundId: number, hole: number, strokes: number |
 	}
 }
 
-export async function closeRound(roundId: number, operation: "finish" | "discard"): Promise<Result>
+export async function closeRound(
+	roundId: number,
+	operation: "finish" | "discard",
+	invalidate: (roundId: number) => void,
+): Promise<Result>
 {
 	const user = await userId();
 

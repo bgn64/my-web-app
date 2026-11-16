@@ -1,6 +1,6 @@
 import { Suspense } from "react";
-import { AuthForm } from "../auth-controls";
-import { Brand } from "../brand";
+import { AuthForm } from "./_components/auth-form";
+import { Brand } from "../_components/brand";
 
 type SignInProps = {
 	searchParams: Promise<{

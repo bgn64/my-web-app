@@ -4,8 +4,8 @@ import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import pg from "pg";
 import { validateCatalog, importCatalog } from "../scripts/import-course-catalog.mjs";
-import { loadCourseScorecard } from "../app/course-hydration.ts";
-import { createScorecardRound } from "../app/golf-round-start.ts";
+import { loadCourseScorecard } from "../app/_features/courses/course-hydration.ts";
+import { createScorecardRound } from "../app/_features/rounds/golf-round-start.ts";
 import { coursePayload } from "./fixtures/course.mjs";
 
 const catalog = JSON.parse(await readFile(new URL("../data/course-catalog.json", import.meta.url), "utf8"));

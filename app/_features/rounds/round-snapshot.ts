@@ -1,11 +1,10 @@
 import type {
-	GolfRound,
 	NormalizedScorecard,
 	PhysicalTee,
-	RoundSnapshot,
 	ScorecardHole,
 	TeeRating,
-} from "./golf-types";
+} from "../courses/types";
+import type { GolfRound, RoundSnapshot } from "./types";
 
 const record = (value: unknown): value is Record<string, unknown> =>
 	value !== null && typeof value === "object" && !Array.isArray(value);
