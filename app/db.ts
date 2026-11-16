@@ -2,30 +2,36 @@ import "server-only";
 import { Pool } from "pg";
 
 const globalForDb = globalThis as typeof globalThis & {
-  postgresPool?: Pool;
+	postgresPool?: Pool;
 };
 
-export function getDb() {
-  if (!globalForDb.postgresPool) {
-    for (const name of [
-      "PGHOST",
-      "PGDATABASE",
-      "PGUSER",
-      "PGPASSWORD",
-    ]) {
-      if (!process.env[name]) {
-        throw new Error(`Missing database environment variable: ${name}`);
-      }
-    }
+/** Reuses a single pool across development reloads. */
+export function getDb()
+{
+	if (!globalForDb.postgresPool)
+	{
+		for (const name of [
+			"PGHOST",
+			"PGDATABASE",
+			"PGUSER",
+			"PGPASSWORD",
+		])
+		{
+			if (!process.env[name])
+			{
+				throw new Error(`Missing database environment variable: ${name}`);
+			}
+		}
 
-    const pool = new Pool();
+		const pool = new Pool();
 
-    pool.on("error", (error) => {
-      console.error("Unexpected PostgreSQL pool error:", error);
-    });
+		pool.on("error", (error) =>
+		{
+			console.error("Unexpected PostgreSQL pool error:", error);
+		});
 
-    globalForDb.postgresPool = pool;
-  }
+		globalForDb.postgresPool = pool;
+	}
 
-  return globalForDb.postgresPool;
+	return globalForDb.postgresPool;
 }

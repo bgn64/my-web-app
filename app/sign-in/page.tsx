@@ -2,25 +2,34 @@ import { Suspense } from "react";
 import { AuthForm } from "../auth-controls";
 import { Brand } from "../brand";
 
-async function SignInForm({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
-  const { next } = await searchParams;
-  const destination = next && next.startsWith("/") && !next.startsWith("//") && !next.includes("\\")
-    ? next : "/play";
-  return <AuthForm next={destination} />;
+type SignInProps = {
+	searchParams: Promise<{
+		next?: string;
+	}>;
+};
+
+async function SignInForm({ searchParams }: SignInProps)
+{
+	const { next } = await searchParams;
+	const destination = next && next.startsWith("/") && !next.startsWith("//") && !next.includes("\\")
+		? next : "/play";
+
+	return <AuthForm next={destination} />;
 }
 
-export default function SignIn({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
-  return (
-    <main className="auth-page">
-      <div className="auth-card">
-        <Brand />
-        <p className="eyebrow">YOUR GOLF COMPANION</p>
-        <h1>Your round,<br />simply.</h1>
-        <p className="auth-intro">Less time keeping score. More time enjoying the game.</p>
-        <Suspense fallback={<p>Loading sign in...</p>}>
-          <SignInForm searchParams={searchParams} />
-        </Suspense>
-      </div>
-    </main>
-  );
+export default function SignIn({ searchParams }: SignInProps)
+{
+	return (
+		<main className="auth-page">
+			<div className="auth-card">
+				<Brand />
+				<p className="eyebrow">YOUR GOLF COMPANION</p>
+				<h1>Your round,<br />simply.</h1>
+				<p className="auth-intro">Less time keeping score. More time enjoying the game.</p>
+				<Suspense fallback={<p>Loading sign in...</p>}>
+					<SignInForm searchParams={searchParams} />
+				</Suspense>
+			</div>
+		</main>
+	);
 }

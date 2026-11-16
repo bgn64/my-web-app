@@ -4,139 +4,163 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "./auth-client";
 
-export function AuthForm({ next = "/play" }: { next?: string }) {
-  const [signup, setSignup] = useState(false);
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState("");
+type AuthFormProps = {
+	next?: string;
+};
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+export function AuthForm({ next = "/play" }: AuthFormProps)
+{
+	const [signup, setSignup] = useState(false);
+	const [pending, setPending] = useState(false);
+	const [error, setError] = useState("");
 
-    const data = new FormData(event.currentTarget);
-    const email = String(data.get("email") ?? "");
-    const password = String(data.get("password") ?? "");
-    const name = String(data.get("name") ?? "");
+	async function handleSubmit(event: FormEvent<HTMLFormElement>)
+	{
+		event.preventDefault();
 
-    setPending(true);
-    setError("");
+		const data = new FormData(event.currentTarget);
+		const email = String(data.get("email") ?? "");
+		const password = String(data.get("password") ?? "");
+		const name = String(data.get("name") ?? "");
 
-    try {
-      const result = signup
-        ? await authClient.signUp.email({ name, email, password })
-        : await authClient.signIn.email({ email, password });
+		setPending(true);
+		setError("");
 
-      if (result.error) {
-        setError(result.error.message ?? "Authentication failed.");
-        return;
-      }
+		try
+		{
+			const result = signup
+				? await authClient.signUp.email({
+					name,
+					email,
+					password,
+				})
+				: await authClient.signIn.email({
+					email,
+					password,
+				});
 
-      window.location.assign(next);
-    } catch (error) {
-      setError(
-        error instanceof Error ? error.message : "Unable to contact the server.",
-      );
-    } finally {
-      setPending(false);
-    }
-  }
+			if (result.error)
+			{
+				setError(result.error.message ?? "Authentication failed.");
+				return;
+			}
 
-  return (
-    <section className="auth-form">
-      <h2>{signup ? "Create your account" : "Welcome back"}</h2>
-      <p className="muted">{signup ? "Start keeping track of your rounds." : "Sign in to pick up where you left off."}</p>
+			window.location.assign(next);
+		}
+		catch (error)
+		{
+			setError(error instanceof Error ? error.message : "Unable to contact the server.");
+		}
+		finally
+		{
+			setPending(false);
+		}
+	}
 
-      <form onSubmit={submit}>
-        <fieldset disabled={pending}>
-          {signup && (
-            <p>
-              <label>
-                Name
-                <input name="name" autoComplete="name" required />
-              </label>
-            </p>
-          )}
+	function handleToggleSignup()
+	{
+		setSignup(!signup);
+		setError("");
+	}
 
-          <p>
-            <label>
-              Email
-              <input
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-              />
-            </label>
-          </p>
+	let submitLabel = signup ? "Sign up" : "Log in";
 
-          <p>
-            <label>
-              Password
-              <input
-                name="password"
-                type="password"
-                minLength={8}
-                autoComplete={signup ? "new-password" : "current-password"}
-                required
-              />
-            </label>
-          </p>
+	if (pending)
+	{
+		submitLabel = "Please wait...";
+	}
 
-          <button className="button button-primary full-width" type="submit">
-            {pending ? "Please wait..." : signup ? "Sign up" : "Log in"}
-          </button>
+	return (
+		<section className="auth-form">
+			<h2>{signup ? "Create your account" : "Welcome back"}</h2>
+			<p className="muted">{signup ? "Start keeping track of your rounds." : "Sign in to pick up where you left off."}</p>
 
-          <button
-            className="text-button full-width"
-            type="button"
-            onClick={() => {
-              setSignup(!signup);
-              setError("");
-            }}
-          >
-            {signup ? "Already have an account?" : "Create an account"}
-          </button>
-        </fieldset>
+			<form onSubmit={handleSubmit}>
+				<fieldset disabled={pending}>
+					{signup && (
+						<p>
+							<label>
+								Name
+								<input name="name" autoComplete="name" required />
+							</label>
+						</p>
+					)}
 
-        {error && <p role="alert">{error}</p>}
-      </form>
-    </section>
-  );
+					<p>
+						<label>
+							Email
+							<input name="email" type="email" autoComplete="email" required />
+						</label>
+					</p>
+
+					<p>
+						<label>
+							Password
+							<input
+								name="password"
+								type="password"
+								minLength={8}
+								autoComplete={signup ? "new-password" : "current-password"}
+								required
+							/>
+						</label>
+					</p>
+
+					<button className="button button-primary full-width" type="submit">
+						{submitLabel}
+					</button>
+
+					<button className="text-button full-width" type="button" onClick={handleToggleSignup}>
+						{signup ? "Already have an account?" : "Create an account"}
+					</button>
+				</fieldset>
+
+				{error && <p role="alert">{error}</p>}
+			</form>
+		</section>
+	);
 }
 
-export function LogoutButton() {
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState("");
-  const router = useRouter();
+export function LogoutButton()
+{
+	const [pending, setPending] = useState(false);
+	const [error, setError] = useState("");
+	const router = useRouter();
 
-  async function logout() {
-    setPending(true);
-    setError("");
+	async function handleLogout()
+	{
+		setPending(true);
+		setError("");
 
-    try {
-      const result = await authClient.signOut();
+		try
+		{
+			const result = await authClient.signOut();
 
-      if (result.error) {
-        setError(result.error.message ?? "Logout failed.");
-        return;
-      }
+			if (result.error)
+			{
+				setError(result.error.message ?? "Logout failed.");
+				return;
+			}
 
-      router.push("/sign-in");
-      router.refresh();
-    } catch (error) {
-      setError(
-        error instanceof Error ? error.message : "Unable to contact the server.",
-      );
-    } finally {
-      setPending(false);
-    }
-  }
+			router.push("/sign-in");
+			router.refresh();
+		}
+		catch (error)
+		{
+			setError(error instanceof Error ? error.message : "Unable to contact the server.");
+		}
+		finally
+		{
+			setPending(false);
+		}
+	}
 
-  return (
-    <div>
-      <button className="menu-button" type="button" onClick={logout} disabled={pending}>
-        {pending ? "Logging out..." : "Log out"}
-      </button>
-      {error && <p role="alert">{error}</p>}
-    </div>
-  );
+	return (
+		<div>
+			<button className="menu-button" type="button" onClick={handleLogout} disabled={pending}>
+				{pending ? "Logging out..." : "Log out"}
+			</button>
+			{error && <p role="alert">{error}</p>}
+		</div>
+	);
 }
