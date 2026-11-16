@@ -137,6 +137,42 @@ Before the final response, run one reporting pass. If candidates remain, from th
 - Preserve effect dependencies, cleanup, state ownership, event ordering,
   accessibility, and observable behavior during extraction.
 
+## Application structure and ownership
+
+- Organize files by responsibility and feature ownership, not merely file type.
+  A file's location should communicate its purpose and intended consumers.
+- Keep the application root focused on root routing, layout, global styles,
+  metadata, and explicitly organized private directories.
+- Keep route-specific UI and helpers beside their route, using private folders
+  such as `_components` when appropriate.
+- Put domain logic shared across routes or entry points under
+  `app/_features/<feature>`. Reuse across unrelated features is not required
+  to justify feature ownership.
+- Put genuinely cross-feature presentation under `app/_components`.
+- Put shared infrastructure, such as database connectivity, under `app/_lib`.
+  Do not use shared folders as miscellaneous dumping grounds.
+- Keep pages, layouts, API handlers, and Server Actions focused on their
+  framework responsibilities and delegating domain operations.
+- Keep HTTP request/response concerns in route handlers and UI concerns in
+  components. Do not have feature code import route entry points.
+- Give shared domain concepts a clear owning feature. Other features may use
+  that feature's focused interfaces; avoid circular dependencies and creating
+  a generic shared module solely to hide unclear ownership.
+- Preserve server/client boundaries. Mark server-only infrastructure and data
+  access appropriately; keep shared types and pure functions safe to import
+  without pulling server dependencies into client code.
+- Split mixed-responsibility modules when their contents belong in different
+  locations. Do not move an ambiguous catch-all file wholesale merely to
+  satisfy a directory scheme.
+- Add subdirectories only when they clarify an existing responsibility.
+  Avoid empty scaffolding, unnecessary barrel exports, and excessive nesting.
+- Keep tests in the existing test structure, grouped by the behavior they
+  cover. Update imports and test fixtures when implementation files move.
+- Preserve Next.js special filenames, route groups, directives, and URL
+  structure. Private implementation directories must not introduce routes.
+- Before adding a file, identify its owner and consumers; place it at the
+  narrowest appropriate scope.
+
 ## Tests and documentation
 
 - Keep test and documentation changes proportional to the feature's importance,
