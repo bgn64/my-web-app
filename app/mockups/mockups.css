@@ -1,0 +1,54 @@
+.mockups-gallery {
+	width: min(100%, 1040px);
+	margin: 0 auto;
+	padding: 48px 24px;
+}
+
+.mockups-introduction { max-width: 640px; margin-bottom: 36px; }
+.mockups-introduction h1 { margin: 10px 0; font-size: 36px; font-weight: 550; letter-spacing: -.04em; }
+.mockups-introduction p, .mockups-card p { color: var(--muted); font-size: 14px; line-height: 1.7; }
+.mockups-section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+.mockups-section-heading h2 { font-size: 20px; font-weight: 550; }
+.mockups-section-heading > span { color: var(--muted); font-size: 13px; }
+.mockups-gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 16px; }
+.mockups-card {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	padding: 22px;
+	border: 1px solid var(--line);
+	border-radius: 20px;
+	background: var(--surface);
+}
+.mockups-card:hover { border-color: var(--accent); background: #20333f; }
+.mockups-card-number { color: var(--accent); font-size: 12px; font-variant-numeric: tabular-nums; }
+.mockups-card h3 { margin: 16px 0 0; font-size: 18px; font-weight: 550; letter-spacing: -.02em; }
+.mockups-card p { margin: 8px 0 20px; }
+.mockups-open { margin-top: auto; color: var(--accent); font-size: 13px; font-weight: 550; }
+.mockups-open > span { padding-left: 8px; }
+.mockup-back, .mockup-round-menu { border: 0; background: transparent; color: var(--ink); }
+.mockup-round-menu { width: 44px; height: 44px; color: var(--muted); font-size: 24px; border-radius: 12px; }
+.mockup-back:hover, .mockup-round-menu:hover:not(:disabled) { background: var(--raised); }
+.mockup-progress { width: 22.2222%; }
+.mockup-search-field { anchor-name: --mockup-stat-search; }
+.mockups-root .mockup-search-results {
+	position-anchor: --mockup-stat-search;
+	top: calc(anchor(bottom) + 6px);
+	left: anchor(left);
+	width: anchor-size(width);
+	position-try-fallbacks: flip-block;
+	max-height: 180px;
+	z-index: 10;
+}
+.mockup-search-results [role="option"]:hover { background: #355360; }
+.mockup-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 20;
+	display: grid;
+	place-items: center;
+	overflow-y: auto;
+	padding: 24px 0;
+	background: #060c14bd;
+}
+.mockup-creation { flex: none; }
