@@ -5,6 +5,7 @@ services:
       - "3000:3000"
     restart: unless-stopped
     environment:
+      APP_ENV: ${APP_ENV:-production}
       PGHOST: db
       PGPORT: "5432"
       PGDATABASE: todos
