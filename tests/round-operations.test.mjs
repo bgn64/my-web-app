@@ -90,10 +90,8 @@ test("score save retains transaction and invalidation ordering, including failur
 			}
 		});
 
-		assert.equal(result.ok, !failInvalidation);
-		assert.deepEqual(events, failInvalidation
-			? ["BEGIN", "SELECT", "UPDATE", "COMMIT", "invalidate", "ROLLBACK", "release"]
-			: ["BEGIN", "SELECT", "UPDATE", "COMMIT", "invalidate", "release"]);
+		assert.equal(result.ok, true);
+		assert.deepEqual(events, ["BEGIN", "SELECT", "UPDATE", "COMMIT", "invalidate", "release"]);
 	}
 });
 

@@ -184,3 +184,64 @@ Before the final response, run one reporting pass. If candidates remain, from th
   brittle, or unnecessarily elaborate tests.
 - Do not omit necessary documentation or important tests merely to minimize
   changes.
+
+## UI design standards
+
+Apply these standards when creating, modifying, reviewing, or refining
+UI. Existing implementation is not evidence that a design decision
+should be preserved.
+
+### Own the design outcome
+
+- Take responsibility for interaction design, not just implementing
+  controls. The user supplies goals, constraints, and preferences;
+  independently resolve ordinary layout and interaction decisions.
+- When asked to improve or "take another pass" at UI, evaluate its
+  structure and workflow—not merely colors, spacing, and decoration.
+- Preserve product capabilities, data integrity, and accessibility.
+  Do not confuse preserving behavior with preserving the current
+  arrangement, component boundaries, or presentation of controls.
+- Ask about consequential changes to product behavior. Do not require
+  the user to art-direct routine design improvements.
+
+### Design around the primary task
+
+- Make the primary task immediately apparent and easy to repeat.
+  Secondary information and management actions must not compete with
+  or obstruct it.
+- Organize the interface around the user's mental model, not storage
+  structures or implementation mechanics.
+- Reveal complexity when needed. Avoid presenting all capabilities,
+  editing controls, and explanations simultaneously.
+- Prefer self-explanatory interactions. Excessive instructional copy
+  is a signal to reconsider the design, not merely shorten the text.
+
+### Make the interface feel cohesive
+
+- Establish deliberate hierarchy, alignment, density, typography,
+  spacing, and control treatments across the whole workflow.
+- Remove unnecessary stacking, repeated labels, competing emphasis,
+  and containers that add visual weight without useful grouping.
+- Make frequent actions efficient and secondary actions discoverable
+  without giving them equal prominence.
+- Keep routine interactions spatially stable. Background work must
+  not cause layout shifts, flashing messages, or focus loss.
+- Reuse successful existing patterns, but do not perpetuate a weak
+  pattern solely for consistency.
+
+### Evaluate and iterate
+
+- Before changing UI, identify its main usability and visual hierarchy
+  weaknesses against these standards. Use that assessment to guide
+  implementation; do not stop at an audit unless asked.
+- Inspect the rendered result in realistic populated states and at
+  relevant viewport sizes. Exercise the primary workflow, not just
+  isolated controls.
+- Compare the result against the starting point: what became clearer,
+  quieter, faster, or more coherent? Resolve evident shortcomings
+  before declaring completion.
+- Passing tests, fitting a mobile viewport, and using design tokens
+  do not alone demonstrate polish.
+- Report verification limitations and remaining trade-offs honestly.
+  Keep the completion summary focused on meaningful improvements,
+  not a checklist of cosmetic changes.

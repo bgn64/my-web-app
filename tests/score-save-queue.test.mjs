@@ -272,3 +272,60 @@ test("snapshots are stable and unsubscribed listeners are not notified", async (
 	assert.equal(await queue.flush(), true);
 	assert.equal(notifications, 1);
 });
+
+test("scores and stat answers share one queue and retain newer answers", async () =>
+{
+	const calls = [];
+	const requests = [];
+	const save = (item) =>
+	{
+		calls.push(item);
+		return new Promise((resolve) => requests.push(resolve));
+	};
+	const queue = new ScoreSaveQueue(
+		(hole, strokes) => save({ type: "score", hole, strokes }),
+		(stat) => save({ type: "stat", ...stat }),
+	);
+	const answer = { statId: 7, hole: 1, kind: "boolean", value: false, revision: 1 };
+	queue.enqueueStat(answer);
+	queue.enqueue(2, 4);
+	queue.enqueueStat({ ...answer, value: true });
+	queue.enqueueStat({ ...answer, value: null });
+	assert.equal(calls.length, 1);
+	requests.shift()({ ok: true });
+	await setImmediate();
+	assert.deepEqual(calls[1], { type: "score", hole: 2, strokes: 4 });
+	requests.shift()({ ok: true });
+	await setImmediate();
+	assert.deepEqual(calls[2], { type: "stat", ...answer, value: null });
+	requests.shift()({ ok: true });
+	assert.equal(await queue.flush(), true);
+});
+
+test("a failed stat write retries the newest clear and preserves queued scores", async () =>
+{
+	const calls = [];
+	const requests = [];
+	const save = (item) =>
+	{
+		calls.push(item);
+		return new Promise((resolve) => requests.push(resolve));
+	};
+	const queue = new ScoreSaveQueue(
+		(hole, strokes) => save({ type: "score", hole, strokes }),
+		(stat) => save({ type: "stat", ...stat }),
+	);
+	const answer = { statId: 10, hole: 3, kind: "number", value: 0, revision: 2 };
+	queue.enqueueStat(answer);
+	queue.enqueue(4, 5);
+	queue.enqueueStat({ ...answer, value: null });
+	requests.shift()({ ok: false, error: "Save failed." });
+	assert.equal(await queue.flush(), false);
+	queue.retry();
+	assert.deepEqual(calls[1], { type: "score", hole: 4, strokes: 5 });
+	requests.shift()({ ok: true });
+	await setImmediate();
+	assert.deepEqual(calls[2], { type: "stat", ...answer, value: null });
+	requests.shift()({ ok: true });
+	assert.equal(await queue.flush(), true);
+});

@@ -21,6 +21,18 @@ async function userId()
 	return session?.user.id ?? null;
 }
 
+function invalidateAfterCommit(invalidate: (roundId: number) => void, roundId: number)
+{
+	try
+	{
+		invalidate(roundId);
+	}
+	catch (error)
+	{
+		console.error("Round saved, but page refresh failed:", error);
+	}
+}
+
 export async function startRound(courseId: string, invalidate: (roundId: number) => void): Promise<Result>
 {
 	const user = await userId();
@@ -56,7 +68,7 @@ export async function startRound(courseId: string, invalidate: (roundId: number)
 
 		const scorecard = await requireCourseScorecard(course);
 		const roundId = await createScorecardRound(getDb(), user, scorecard);
-		invalidate(roundId);
+		invalidateAfterCommit(invalidate, roundId);
 		return {
 			ok: true,
 			roundId,
@@ -151,7 +163,7 @@ export async function saveScore(
 		}
 
 		await client.query("COMMIT");
-		invalidate(roundId);
+		invalidateAfterCommit(invalidate, roundId);
 		return {
 			ok: true,
 		};
@@ -215,7 +227,7 @@ export async function closeRound(
 			};
 		}
 
-		invalidate(roundId);
+		invalidateAfterCommit(invalidate, roundId);
 		return {
 			ok: true,
 		};

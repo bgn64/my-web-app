@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { parseId } from "../../../../_lib/parse-id";
 import { requireUser } from "../../../../_features/auth/session";
 import { getRound } from "../../../../_features/rounds/data";
+import { getRoundStats } from "../../../../_features/stats/data";
 import { Scorecard } from "./_components/scorecard";
 
 type ScorecardPageProps = {
@@ -38,14 +39,11 @@ export default async function ScorecardPage({ params }: ScorecardPageProps)
 		throw new Error("Round has no scorecard.");
 	}
 
-	return (
-		<div className="page scorecard-page">
-			<div className="scorecard-intro">
-				<span className="eyebrow">ROUND IN PROGRESS</span>
-				<h1>{round.course_name}</h1>
-				<p>{round.course_location}</p>
-			</div>
-			<Scorecard roundId={id} initialHoles={round.holes} />
-		</div>
-	);
+	const stats = await getRoundStats(user.id, id);
+	if (!stats)
+	{
+		notFound();
+	}
+
+	return <Scorecard roundId={id} courseName={round.course_name} initialHoles={round.holes} initialStats={stats} />;
 }

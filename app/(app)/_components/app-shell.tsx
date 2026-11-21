@@ -48,6 +48,12 @@ export function AppShell({ children, name, email }: AppShellProps)
 {
 	const path = usePathname();
 	const scorecard = path.endsWith("/scorecard");
+
+	if (scorecard)
+	{
+		return <main className="focused-scorecard-shell">{children}</main>;
+	}
+
 	const playActive = path.startsWith("/play") || scorecard;
 	let back: string | null = null;
 	let title: string | null = null;

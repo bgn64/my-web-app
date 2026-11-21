@@ -3,6 +3,9 @@ import { parseId } from "../../../_lib/parse-id";
 import { requireUser } from "../../../_features/auth/session";
 import { getRound } from "../../../_features/rounds/data";
 import { relativeScore, summarize } from "../../../_features/rounds/golf-summary";
+import { getRoundStats } from "../../../_features/stats/data";
+import { RoundStatsSummary } from "../../../_features/stats/summary";
+import { statDisplayName } from "../../../_features/stats/contracts";
 
 type RoundDetailPageProps = {
 	params: Promise<{
@@ -34,6 +37,11 @@ export default async function RoundDetailPage({ params }: RoundDetailPageProps)
 	}
 
 	const summary = summarize(round.holes);
+	const stats = await getRoundStats(user.id, id);
+	if (!stats)
+	{
+		notFound();
+	}
 
 	return (
 		<div className="page">
@@ -62,6 +70,7 @@ export default async function RoundDetailPage({ params }: RoundDetailPageProps)
 			{summary.played < summary.total && (
 				<p className="partial-note">Partial round · Totals include scored holes only.</p>
 			)}
+			<RoundStatsSummary stats={stats.stats} holeCount={round.holes.length} />
 			<div className="section-heading">
 				<span>YOUR SCORECARD</span>
 				<span>READ ONLY</span>
@@ -77,6 +86,16 @@ export default async function RoundDetailPage({ params }: RoundDetailPageProps)
 						<div className="history-yardages">
 							{hole.yardages.map((tee) => <span key={tee.name}>{tee.name} <strong>{tee.yards} yds</strong></span>)}
 						</div>
+						{stats.stats.length > 0 && (
+							<div className="history-stats">
+								{stats.stats.map((stat) =>
+								{
+									const value = stat.values.find((entry) => entry.hole === hole.hole_number)?.value;
+									const text = value === undefined ? "—" : typeof value === "boolean" ? (value ? "Yes" : "No") : value;
+									return <div key={stat.id}><span>{statDisplayName(stats.stats, stat)}</span><strong>{text}</strong></div>;
+								})}
+							</div>
+						)}
 					</div>
 				))}
 			</div>
