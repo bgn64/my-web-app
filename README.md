@@ -30,6 +30,17 @@ Schema migrations create empty golf tables. The separate import command loads a 
 
 ## Course data
 
+### Sample courses for offline testing
+
+After migrations, run `npm run catalog:sample` with the same `PG*` settings as `catalog:import`.
+With Docker Compose, run `docker compose run --rm --build migrate npm run catalog:sample`.
+In the course picker, search **Sample:** to find **Pine Hollow (9 holes)** and **Meadow Ridge (18 holes)**.
+Both have complete scorecards with pars, handicap ranks, two tees, yardages, and ratings. Starting a round
+on either course does not call OpenGolfAPI; the app still needs its local database.
+
+The sample seed does not require the real catalog and can coexist with it. Rerunning the command keeps
+existing sample scorecards and restores missing ones. It does not create accounts, rounds, or personal stats.
+
 The database separates discovery (`courses`), reusable scorecard details (`course_scorecards`, `course_holes`, `course_tees`, `course_yardages`, `course_tee_ratings`), and played rounds (`golf_rounds`, `round_scores`). Catalog metadata owns course name/location; hydration never overwrites it. Physical tees share yardages across separate gender-specific rating records.
 
 The course picker searches names and locations on the server, returning 50 entries per page. It displays only catalog metadata, never hole counts or cache status; catalog queries do not read reusable scorecards. Unreliable bulk hole counts are not imported. Browsing does not fetch details. **Start round** calls the centralized server-only `requireCourseScorecard` service, which fetches `https://api.opengolfapi.org/api/v1/courses/{id}` only when there is no successful cached scorecard.

@@ -6,10 +6,63 @@ import { loadCourseScorecard } from "../app/_features/courses/course-hydration.t
 import { createScorecardRound } from "../app/_features/rounds/golf-round-start.ts";
 import { coursePayload } from "./fixtures/course.mjs";
 import { presentRound } from "../app/_features/rounds/round-snapshot.ts";
+import { seedSampleCourses } from "../scripts/seed-sample-courses.mjs";
 
 const options = {
 	skip: process.env.FAIRWAY_TEST_DB !== "1",
 };
+
+test("sample courses seed once and start complete rounds without provider requests", options, async () =>
+{
+	const pool = new pg.Pool();
+	const user = randomUUID();
+
+	try
+	{
+		const existing = await pool.query("SELECT id FROM courses WHERE provider = 'sample'");
+		assert.equal(existing.rowCount, 0, "Use a fresh dedicated test database without sample courses");
+
+		try
+		{
+			await pool.query(
+				'INSERT INTO "user" (id,name,email) VALUES ($1,$2,$3)',
+				[user, "Sample course test", `${user}@example.test`],
+			);
+			assert.deepEqual(await seedSampleCourses(pool), { inserted: 2, restored: 0, unchanged: 0 });
+			assert.deepEqual(await seedSampleCourses(pool), { inserted: 0, restored: 0, unchanged: 2 });
+			const courses = await pool.query(
+				`SELECT c.id, s.hole_count FROM courses c JOIN course_scorecards s ON s.course_id = c.id
+				 WHERE c.provider = 'sample' ORDER BY s.hole_count`,
+			);
+			assert.deepEqual(courses.rows.map((row) => row.hole_count), [9, 18]);
+			const [first] = courses.rows;
+			await pool.query("DELETE FROM course_scorecards WHERE course_id = $1", [first.id]);
+			assert.deepEqual(await seedSampleCourses(pool), { inserted: 0, restored: 1, unchanged: 1 });
+
+			for (const { id, hole_count: holeCount } of courses.rows)
+			{
+				const card = await loadCourseScorecard(pool, id, () => assert.fail("Sample must not fetch"));
+				assert.equal(card.holes.length, holeCount);
+				assert.ok(card.holes.every((hole) => hole.yardages.length === 2));
+				assert.ok(card.tees.every((tee) => tee.playable && tee.ratings.length > 0));
+				const round = await createScorecardRound(pool, user, card);
+				const scores = await pool.query("SELECT strokes FROM round_scores WHERE round_id = $1", [round]);
+				assert.equal(scores.rowCount, holeCount);
+				assert.ok(scores.rows.every((row) => row.strokes === null));
+				await pool.query("DELETE FROM golf_rounds WHERE id = $1", [round]);
+			}
+		}
+		finally
+		{
+			await pool.query('DELETE FROM "user" WHERE id = $1', [user]);
+			await pool.query("DELETE FROM courses WHERE provider = 'sample'");
+		}
+	}
+	finally
+	{
+		await pool.end();
+	}
+});
 
 async function fixture(run)
 {

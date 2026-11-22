@@ -43,62 +43,67 @@ async function cached(client: PoolClient, id: number): Promise<CourseScorecard |
 	};
 }
 
-/** Replaces scorecard details atomically, retaining rollback and commit in one scope. */
+/** Writes a new cached scorecard using the caller's transaction. */
+export async function writeCourseScorecard(client: PoolClient, card: CourseScorecard, payload: unknown)
+{
+	await client.query("DELETE FROM course_tees WHERE course_id = $1", [card.id]);
+	await client.query("DELETE FROM course_holes WHERE course_id = $1", [card.id]);
+
+	for (const hole of card.holes)
+	{
+		await client.query(
+			"INSERT INTO course_holes (course_id, hole_number, par, handicap) VALUES ($1,$2,$3,$4)",
+			[card.id, hole.hole_number, hole.par, hole.handicap],
+		);
+	}
+
+	for (const [index, tee] of card.tees.entries())
+	{
+		const row = await client.query<{
+			id: number;
+		}>(
+			`INSERT INTO course_tees (course_id, name, sort_order, tee_key, playable, total_yards)
+         VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
+			[card.id, tee.name, index + 1, tee.key, tee.playable, tee.totalYards],
+		);
+		const teeId = row.rows[0].id;
+
+		for (const rating of tee.ratings)
+		{
+			await client.query(
+				`INSERT INTO course_tee_ratings
+           (tee_id, provider_key, gender, color, course_rating, slope, par, reported_yards)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+				[
+					teeId, rating.key, rating.gender, rating.color,
+					rating.courseRating, rating.slope, rating.par, rating.reportedYards,
+				],
+			);
+		}
+
+		for (const [hole, yards] of Object.entries(tee.yardages))
+		{
+			await client.query(
+				"INSERT INTO course_yardages (course_id, hole_number, tee_id, yards) VALUES ($1,$2,$3,$4)",
+				[card.id, Number(hole), teeId, yards],
+			);
+		}
+	}
+
+	await client.query(
+		`INSERT INTO course_scorecards (course_id, hole_count, total_par, payload, warnings)
+       VALUES ($1,$2,$3,$4,$5)`,
+		[card.id, card.holeCount, card.totalPar, JSON.stringify(payload), JSON.stringify(card.warnings)],
+	);
+}
+
 async function persist(client: PoolClient, card: CourseScorecard, payload: unknown)
 {
 	await client.query("BEGIN");
 
 	try
 	{
-		await client.query("DELETE FROM course_tees WHERE course_id = $1", [card.id]);
-		await client.query("DELETE FROM course_holes WHERE course_id = $1", [card.id]);
-
-		for (const hole of card.holes)
-		{
-			await client.query(
-				"INSERT INTO course_holes (course_id, hole_number, par, handicap) VALUES ($1,$2,$3,$4)",
-				[card.id, hole.hole_number, hole.par, hole.handicap],
-			);
-		}
-
-		for (const [index, tee] of card.tees.entries())
-		{
-			const row = await client.query<{
-				id: number;
-			}>(
-				`INSERT INTO course_tees (course_id, name, sort_order, tee_key, playable, total_yards)
-         VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
-				[card.id, tee.name, index + 1, tee.key, tee.playable, tee.totalYards],
-			);
-			const teeId = row.rows[0].id;
-
-			for (const rating of tee.ratings)
-			{
-				await client.query(
-					`INSERT INTO course_tee_ratings
-           (tee_id, provider_key, gender, color, course_rating, slope, par, reported_yards)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-					[
-						teeId, rating.key, rating.gender, rating.color,
-						rating.courseRating, rating.slope, rating.par, rating.reportedYards,
-					],
-				);
-			}
-
-			for (const [hole, yards] of Object.entries(tee.yardages))
-			{
-				await client.query(
-					"INSERT INTO course_yardages (course_id, hole_number, tee_id, yards) VALUES ($1,$2,$3,$4)",
-					[card.id, Number(hole), teeId, yards],
-				);
-			}
-		}
-
-		await client.query(
-			`INSERT INTO course_scorecards (course_id, hole_count, total_par, payload, warnings)
-       VALUES ($1,$2,$3,$4,$5)`,
-			[card.id, card.holeCount, card.totalPar, JSON.stringify(payload), JSON.stringify(card.warnings)],
-		);
+		await writeCourseScorecard(client, card, payload);
 		await client.query("COMMIT");
 	}
 	catch (error)
@@ -151,6 +156,11 @@ export async function loadCourseScorecard(
 		}
 
 		const { provider, external_id: externalId } = course.rows[0];
+
+		if (provider === "sample")
+		{
+			throw new CourseDetailsError("This sample course is missing its scorecard. Run npm run catalog:sample to restore it.");
+		}
 
 		if (provider !== "opengolf" ||
 			!externalId ||
