@@ -173,6 +173,30 @@ Before the final response, run one reporting pass. If candidates remain, from th
 - Before adding a file, identify its owner and consumers; place it at the
   narrowest appropriate scope.
 
+## UI mockups
+
+- When asked to create a UI mockup or design variant, build a reviewable page
+  under [app/mockups](./app/mockups) and link it from the `/mockups` gallery.
+  Leave the live UI and its behavior unchanged unless asked to update them.
+  Preserve earlier variants for comparison unless asked to revise or replace one.
+- For scoring mockups, add a descriptive slug and gallery entry in
+  [scoring-examples.ts](./app/mockups/scoring-examples.ts), render it through
+  [the scoring variant route](./app/mockups/scoring/[variant]/page.tsx), and keep
+  mockup components in `app/mockups/_components`. Use the same gallery and
+  category-specific routes for other screens rather than adding them to scoring.
+- Put newly requested variants first in the relevant gallery section, with
+  titles that make the differences clear. When adding a featured scoring
+  variant, update the featured split in [the gallery](./app/mockups/page.tsx)
+  and the expectations in [mockups.test.mjs](./tests/mockups.test.mjs).
+- Keep mockup fixtures, components, and styles self-contained. Reuse app base
+  styles and assets, but don't depend on live feature modules, authentication,
+  APIs, or the database. Use sample data; default to static previews and use
+  local, reset-on-reload state when testing an interaction.
+- Preserve the development-only gate in [proxy.ts](./proxy.ts): `/mockups`
+  and its subroutes are available only with `APP_ENV=development`. Preview the
+  requested states at relevant viewport sizes and include direct preview links
+  in the handoff so the user can compare them.
+
 ## Tests and documentation
 
 - Keep test and documentation changes proportional to the feature's importance,
