@@ -12,21 +12,31 @@ exercises these modules and route-local behavior.
 
 ## Setup
 
-Install dependencies with `npm ci`. Configure PostgreSQL using `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, and `PGPASSWORD`, and set `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` for the application. Use a long, unique secret and set the URL to the application's actual origin. Then run:
+Copy [.env.example](./.env.example) to `.env`, fill in `PGPASSWORD` and a long, unique `BETTER_AUTH_SECRET`, and set `BETTER_AUTH_URL` to the application's actual origin. Keep `.env` out of version control. If updating an existing `.env`, use `PGPASSWORD` in place of `POSTGRES_PASSWORD`.
+
+Keep `COMPOSE_FILE` and `COMPOSE_PATH_SEPARATOR` from the example. They let `APP_ENV` select the Compose override without `-f` flags: `development` publishes PostgreSQL on `127.0.0.1:5432`, while `production` (the default if `APP_ENV` is unset) leaves it reachable only on the Docker network.
+
+### Local development
+
+Run PostgreSQL in Docker and Next.js on your machine for Fast Refresh:
 
 ```bash
-npm run db:migrate
-npm run catalog:import
+npm ci
+docker compose up -d --wait db
+docker compose run --rm --build migrate
+docker compose run --rm migrate npm run catalog:import
 npm run dev
 ```
 
-Alternatively, set `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET`, and `BETTER_AUTH_URL` in a local `.env` file and run `docker compose up --build`. Compose runs schema migrations before starting the application. Populate the catalog explicitly with `docker compose run --rm --build migrate npm run catalog:import`. This builds the import image before running it, including the checked-in catalog allowed by `.dockerignore`. Existing todo data is not deleted by the golf migration.
+Next.js reads `.env` directly and connects to PostgreSQL at `127.0.0.1:5432`. Compose uses the same database name, user, and password, but its services connect to `db:5432`. Run the migration command again after adding migrations. If you run migration or catalog npm scripts directly on the host instead, export the `PG*` variables first; those scripts don't load `.env` automatically.
 
-Compose forwards `APP_ENV` to the web container, defaulting to `production`. Set `APP_ENV=development` in `.env` to opt into development-only features as they are added. This is separate from `NODE_ENV`; the container still runs an optimized production build. Recreate the web container after changing it with `docker compose up -d --no-deps web`.
+### Full Docker stack
+
+Set `APP_ENV=production` for deployments and run `docker compose up --build`. Compose runs schema migrations before starting the web app. Populate the catalog explicitly with `docker compose run --rm --build migrate npm run catalog:import`. `APP_ENV` controls development-only features separately from `NODE_ENV`; the web container still runs an optimized build.
 
 Schema migrations create empty golf tables. The separate import command loads a frozen US catalog of **15,667 courses** from [data/course-catalog.json](./data/course-catalog.json), without requiring internet access. It validates the whole file and applies it transactionally, inserting missing courses and updating changed metadata by provider/external ID. Internal course IDs, cached scorecards, and round snapshots are preserved. Identical imports report unchanged entries; entries absent from the file are not deleted. Reimporting restores catalog metadata edited locally and reinserts entries deleted locally, without reconnecting historical rounds to newly inserted IDs. Course editing and automatic synchronization are not included.
 
-**Development database reset required:** the golf migrations have been collapsed into one clean schema, without fictional seeds or upgrade/backfill logic. Do not run this rewritten history against a previously migrated database. Recreate your disposable local PostgreSQL database before testing, then migrate and import. The Compose database persists in a named volume: restarting or removing only its container does not reset that data. Resetting that volume deletes all local accounts and rounds as well; this is a manual development operation, not part of either command.
+**Existing databases:** Changing `PGDATABASE`, `PGUSER`, or `PGPASSWORD` does not rename the database or role or change the password in an initialized volume. If you need to keep your data, back it up and plan the database changes separately before switching settings. For disposable development data, use a fresh volume, then migrate and import. Removing the old volume deletes all local accounts and rounds; restarting or removing only its container does not. Do not run the rewritten golf migration history against a database that already ran the older migrations.
 
 ## Course data
 
