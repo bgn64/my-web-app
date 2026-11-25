@@ -30,6 +30,8 @@ npm run dev
 
 Next.js reads `.env` directly and connects to PostgreSQL at `127.0.0.1:5432`. Compose uses the same database name, user, and password, but its services connect to `db:5432`. Run the migration command again after adding migrations. If you run migration or catalog npm scripts directly on the host instead, export the `PG*` variables first; those scripts don't load `.env` automatically.
 
+For design previews, set `APP_ENV=development`, run `npm run dev`, and open `/mockups`.
+
 ### Full Docker stack
 
 Set `APP_ENV=production` for deployments and run `docker compose up --build`. Compose runs schema migrations before starting the web app. Populate the catalog explicitly with `docker compose run --rm --build migrate npm run catalog:import`. `APP_ENV` controls development-only features separately from `NODE_ENV`; the web container still runs an optimized build.
